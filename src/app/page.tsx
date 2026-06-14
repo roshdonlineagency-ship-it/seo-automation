@@ -10,22 +10,19 @@ export default function Dashboard() {
     { title: "تحلیل و پیشنهاد", desc: "داشبوردِ آماری و خروجی‌ها", href: "/analytics" },
   ];
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white p-10" dir="rtl">
-      <div className="max-w-3xl mx-auto">
-        <p className="text-white/40 text-sm mb-1">خوش اومدی 👋</p>
-        <h1 className="text-4xl font-bold mb-8 tracking-tight">مرکز فرماندهی</h1>
-        <div className="grid grid-cols-2 gap-4">
-          {cards.map((card, i) => (
-            <div
-              key={i}
-              onClick={() => router.push(card.href)}
-              className="bg-white/5 border border-white/10 rounded-2xl p-7 hover:border-white/20 hover:scale-[1.02] transition-all cursor-pointer"
-            >
-              <h2 className="text-lg font-semibold mb-1">{card.title}</h2>
-              <p className="text-white/40 text-sm">{card.desc}</p>
-            </div>
-          ))}
-        </div>
+    <div className="p-10 bg-gray-50 min-h-screen text-gray-900">
+      <h1 className="text-3xl font-bold mb-8">مرکز فرماندهی</h1>
+      <div className="grid grid-cols-2 gap-6">
+        {cards.map((card, i) => (
+          <div
+            key={i}
+            onClick={() => router.push(card.href)}
+            className="p-8 bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition cursor-pointer"
+          >
+            <h2 className="text-xl font-semibold mb-2">{card.title}</h2>
+            <p className="text-gray-500">{card.desc}</p>
+          </div>
+        ))}
       </div>
     </div>
   );
