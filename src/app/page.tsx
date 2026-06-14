@@ -1,54 +1,23 @@
-export default function Home() {
+export default function Dashboard() {
+  const cards = [
+    { icon: "🏢", title: "اطلاعات اولیه", desc: "مدیریت لوگو و هویت برند", color: "from-violet-500/20 to-violet-500/5" },
+    { icon: "⚡", title: "پرامپت‌ها", desc: "تنظیم دستورات هوش مصنوعی", color: "from-blue-500/20 to-blue-500/5" },
+    { icon: "🤖", title: "فرایندهای اتوماتیک", desc: "مدیریت سناریوهای خودکار", color: "from-emerald-500/20 to-emerald-500/5" },
+    { icon: "📊", title: "تحلیل و پیشنهاد", desc: "داشبورد آماری و خروجی‌ها", color: "from-amber-500/20 to-amber-500/5" },
+  ];
   return (
-    <div className="min-h-screen bg-black text-white">
-      {/* Navbar */}
-      <nav className="border-b border-white/10 px-8 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-6 h-6 bg-violet-500 rounded-md"/>
-          <span className="font-semibold tracking-tight">SEO.ai</span>
-        </div>
-        <button className="bg-violet-600 hover:bg-violet-500 transition-colors text-sm px-4 py-2 rounded-full">
-          شروع کن
-        </button>
-      </nav>
-
-      {/* Hero */}
-      <div className="max-w-4xl mx-auto px-8 pt-24 pb-16 text-center">
-        <div className="inline-block bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs px-3 py-1 rounded-full mb-6">
-          هوش مصنوعی + سئو
-        </div>
-        <h1 className="text-5xl font-bold tracking-tight mb-4 bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent">
-          سئو رو اتوماتیک کن
-        </h1>
-        <p className="text-white/40 text-lg mb-10">
-          با هوش مصنوعی رتبه سایتت رو بالا ببر
-        </p>
-        <button className="bg-violet-600 hover:bg-violet-500 transition-colors px-8 py-3 rounded-full font-medium">
-          رایگان شروع کن ←
-        </button>
-      </div>
-
-      {/* Cards */}
-      <div className="max-w-4xl mx-auto px-8 grid grid-cols-2 gap-4">
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/8 transition-colors">
-          <div className="w-10 h-10 bg-violet-500/20 rounded-xl flex items-center justify-center text-xl mb-4">🔍</div>
-          <h3 className="font-semibold mb-1">تحقیق کلمات کلیدی</h3>
-          <p className="text-white/40 text-sm">بهترین کلمات رو پیدا کن</p>
-        </div>
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/8 transition-colors">
-          <div className="w-10 h-10 bg-violet-500/20 rounded-xl flex items-center justify-center text-xl mb-4">✍️</div>
-          <h3 className="font-semibold mb-1">تولید محتوا</h3>
-          <p className="text-white/40 text-sm">محتوای سئو شده با AI</p>
-        </div>
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/8 transition-colors">
-          <div className="w-10 h-10 bg-violet-500/20 rounded-xl flex items-center justify-center text-xl mb-4">📈</div>
-          <h3 className="font-semibold mb-1">ردیابی رتبه</h3>
-          <p className="text-white/40 text-sm">رتبه‌ات رو در گوگل ببین</p>
-        </div>
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/8 transition-colors">
-          <div className="w-10 h-10 bg-violet-500/20 rounded-xl flex items-center justify-center text-xl mb-4">🛠️</div>
-          <h3 className="font-semibold mb-1">آدیت فنی</h3>
-          <p className="text-white/40 text-sm">مشکلات فنی سایتت رو حل کن</p>
+    <div className="min-h-screen bg-[#0a0a0a] text-white p-10" dir="rtl">
+      <div className="max-w-3xl mx-auto">
+        <p className="text-white/40 text-sm mb-1">خوش اومدی 👋</p>
+        <h1 className="text-4xl font-bold mb-10 tracking-tight">مرکز فرماندهی</h1>
+        <div className="grid grid-cols-2 gap-4">
+          {cards.map((card, i) => (
+            <div key={i} className={`bg-gradient-to-br ${card.color} border border-white/10 rounded-2xl p-7 hover:border-white/20 hover:scale-[1.02] transition-all cursor-pointer`}>
+              <div className="text-3xl mb-4">{card.icon}</div>
+              <h2 className="text-lg font-semibold mb-1">{card.title}</h2>
+              <p className="text-white/40 text-sm">{card.desc}</p>
+            </div>
+          ))}
         </div>
       </div>
     </div>
