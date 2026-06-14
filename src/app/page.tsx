@@ -1,31 +1,56 @@
 export default function Home() {
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
-      <nav className="bg-white dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700 px-8 py-4">
-        <h1 className="text-xl font-semibold text-zinc-900 dark:text-white">SEO Automation</h1>
-      </nav>
-      <main className="max-w-5xl mx-auto px-8 py-12">
-        <h2 className="text-3xl font-bold text-zinc-900 dark:text-white mb-2">داشبورد سئو</h2>
-        <p className="text-zinc-500 mb-10">ابزارهای اتوماسیون سئو شما</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <div className="bg-white dark:bg-zinc-800 rounded-2xl p-6 border border-zinc-200 dark:border-zinc-700">
-            <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-1">🔍 تحقیق کلمات کلیدی</h3>
-            <p className="text-zinc-500 text-sm">پیدا کردن بهترین کلمات کلیدی برای سایتت</p>
-          </div>
-          <div className="bg-white dark:bg-zinc-800 rounded-2xl p-6 border border-zinc-200 dark:border-zinc-700">
-            <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-1">✍️ تولید محتوا</h3>
-            <p className="text-zinc-500 text-sm">نوشتن محتوای سئو شده با هوش مصنوعی</p>
-          </div>
-          <div className="bg-white dark:bg-zinc-800 rounded-2xl p-6 border border-zinc-200 dark:border-zinc-700">
-            <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-1">📈 ردیابی رتبه</h3>
-            <p className="text-zinc-500 text-sm">پیگیری رتبه سایتت در گوگل</p>
-          </div>
-          <div className="bg-white dark:bg-zinc-800 rounded-2xl p-6 border border-zinc-200 dark:border-zinc-700">
-            <h3 className="text-lg font-semibold text-zinc-900 dark:text-white mb-1">🛠️ آدیت فنی</h3>
-            <p className="text-zinc-500 text-sm">بررسی مشکلات فنی سئو سایت</p>
-          </div>
+    <div className="min-h-screen bg-black text-white">
+      {/* Navbar */}
+      <nav className="border-b border-white/10 px-8 py-4 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 bg-violet-500 rounded-md"/>
+          <span className="font-semibold tracking-tight">SEO.ai</span>
         </div>
-      </main>
+        <button className="bg-violet-600 hover:bg-violet-500 transition-colors text-sm px-4 py-2 rounded-full">
+          شروع کن
+        </button>
+      </nav>
+
+      {/* Hero */}
+      <div className="max-w-4xl mx-auto px-8 pt-24 pb-16 text-center">
+        <div className="inline-block bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs px-3 py-1 rounded-full mb-6">
+          هوش مصنوعی + سئو
+        </div>
+        <h1 className="text-5xl font-bold tracking-tight mb-4 bg-gradient-to-b from-white to-white/40 bg-clip-text text-transparent">
+          سئو رو اتوماتیک کن
+        </h1>
+        <p className="text-white/40 text-lg mb-10">
+          با هوش مصنوعی رتبه سایتت رو بالا ببر
+        </p>
+        <button className="bg-violet-600 hover:bg-violet-500 transition-colors px-8 py-3 rounded-full font-medium">
+          رایگان شروع کن ←
+        </button>
+      </div>
+
+      {/* Cards */}
+      <div className="max-w-4xl mx-auto px-8 grid grid-cols-2 gap-4">
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/8 transition-colors">
+          <div className="w-10 h-10 bg-violet-500/20 rounded-xl flex items-center justify-center text-xl mb-4">🔍</div>
+          <h3 className="font-semibold mb-1">تحقیق کلمات کلیدی</h3>
+          <p className="text-white/40 text-sm">بهترین کلمات رو پیدا کن</p>
+        </div>
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/8 transition-colors">
+          <div className="w-10 h-10 bg-violet-500/20 rounded-xl flex items-center justify-center text-xl mb-4">✍️</div>
+          <h3 className="font-semibold mb-1">تولید محتوا</h3>
+          <p className="text-white/40 text-sm">محتوای سئو شده با AI</p>
+        </div>
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/8 transition-colors">
+          <div className="w-10 h-10 bg-violet-500/20 rounded-xl flex items-center justify-center text-xl mb-4">📈</div>
+          <h3 className="font-semibold mb-1">ردیابی رتبه</h3>
+          <p className="text-white/40 text-sm">رتبه‌ات رو در گوگل ببین</p>
+        </div>
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/8 transition-colors">
+          <div className="w-10 h-10 bg-violet-500/20 rounded-xl flex items-center justify-center text-xl mb-4">🛠️</div>
+          <h3 className="font-semibold mb-1">آدیت فنی</h3>
+          <p className="text-white/40 text-sm">مشکلات فنی سایتت رو حل کن</p>
+        </div>
+      </div>
     </div>
   );
 }
