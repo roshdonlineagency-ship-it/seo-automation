@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import CreateContentModal from "@/components/processes/CreateContentModal";
 
@@ -14,11 +14,11 @@ const processes = [
 
 export default function ProcessesPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const projectId = Number(searchParams.get("projectId"));
 
   const [activeModal, setActiveModal] = useState<string | null>(null);
+
+  // موقت تا بعداً پروژه جاری را وصل کنیم
+  const projectId = 1;
 
   const openProcess = (id: string) => {
     setActiveModal(id);
