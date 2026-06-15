@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import CreateContentModal from "@/components/processes/CreateContentModal";
 
@@ -14,12 +14,11 @@ const processes = [
 
 export default function ProcessesPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const projectId = Number(searchParams.get("projectId"));
 
   const [activeModal, setActiveModal] = useState<string | null>(null);
-
-  // فعلاً موقت
-  // بعداً از پروژه جاری بخون
-  const projectId = 1;
 
   const openProcess = (id: string) => {
     setActiveModal(id);
@@ -35,8 +34,6 @@ export default function ProcessesPage() {
       dir="rtl"
     >
       <div className="max-w-5xl mx-auto">
-        {/* Header */}
-
         <button
           onClick={() => router.back()}
           className="text-white/40 hover:text-white text-sm mb-8 flex items-center gap-2 transition-colors"
@@ -51,8 +48,6 @@ export default function ProcessesPage() {
         <h1 className="text-4xl font-bold mb-10 tracking-tight">
           فرایندها
         </h1>
-
-        {/* Processes */}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
           {processes.map((process) => (
@@ -72,63 +67,35 @@ export default function ProcessesPage() {
           ))}
         </div>
 
-        {/* Logs */}
-
         <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
           <h2 className="text-lg font-semibold mb-5">
             لاگ‌ها
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <button className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-4 transition-colors text-sm">
+            <button className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-4 text-sm">
               لاگ درج محتوا
             </button>
 
-            <button className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-4 transition-colors text-sm">
+            <button className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-4 text-sm">
               لاگ آپدیت محتوا
             </button>
 
-            <button className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-4 transition-colors text-sm">
+            <button className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-4 text-sm">
               لاگ مقالات
             </button>
 
-            <button className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-4 transition-colors text-sm">
+            <button className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl p-4 text-sm">
               لاگ صفحات
             </button>
           </div>
         </div>
-
-        {/* Modals */}
 
         {activeModal === "create" && (
           <CreateContentModal
             projectId={projectId}
             onClose={closeModal}
           />
-        )}
-
-        {activeModal === "update" && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-            <div className="bg-[#111] border border-white/10 rounded-3xl p-8">
-              آپدیت محتوا
-            </div>
-          </div>
-        )}
-
-        {activeModal === "articles" && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-            <div className="bg-[#111] border border-white/10 rounded-3xl p-8">
-              عنوان مقالات و تقویم انتشار
-            </div>
-          </div>
-        )}
-
-        {activeModal === "pages" && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
-            <div className="bg-[#111] border border-white/10 rounded-3xl p-8">
-              عنوان صفحات و تقویم انتشار
-            </div>
-          </div>
         )}
       </div>
     </div>
