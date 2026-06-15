@@ -17,6 +17,10 @@ export default function ProcessesPage() {
 
   const [activeModal, setActiveModal] = useState<string | null>(null);
 
+  // فعلاً موقت
+  // بعداً از پروژه جاری بخون
+  const projectId = 1;
+
   const openProcess = (id: string) => {
     setActiveModal(id);
   };
@@ -26,9 +30,13 @@ export default function ProcessesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white p-10" dir="rtl">
+    <div
+      className="min-h-screen bg-[#0a0a0a] text-white p-10"
+      dir="rtl"
+    >
       <div className="max-w-5xl mx-auto">
         {/* Header */}
+
         <button
           onClick={() => router.back()}
           className="text-white/40 hover:text-white text-sm mb-8 flex items-center gap-2 transition-colors"
@@ -36,13 +44,16 @@ export default function ProcessesPage() {
           ← برگشت
         </button>
 
-        <p className="text-white/40 text-sm mb-1">مدیریت</p>
+        <p className="text-white/40 text-sm mb-1">
+          مدیریت
+        </p>
 
         <h1 className="text-4xl font-bold mb-10 tracking-tight">
           فرایندها
         </h1>
 
-        {/* Process Cards */}
+        {/* Processes */}
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-10">
           {processes.map((process) => (
             <button
@@ -62,6 +73,7 @@ export default function ProcessesPage() {
         </div>
 
         {/* Logs */}
+
         <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
           <h2 className="text-lg font-semibold mb-5">
             لاگ‌ها
@@ -87,8 +99,36 @@ export default function ProcessesPage() {
         </div>
 
         {/* Modals */}
+
         {activeModal === "create" && (
-          <CreateContentModal onClose={closeModal} />
+          <CreateContentModal
+            projectId={projectId}
+            onClose={closeModal}
+          />
+        )}
+
+        {activeModal === "update" && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+            <div className="bg-[#111] border border-white/10 rounded-3xl p-8">
+              آپدیت محتوا
+            </div>
+          </div>
+        )}
+
+        {activeModal === "articles" && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+            <div className="bg-[#111] border border-white/10 rounded-3xl p-8">
+              عنوان مقالات و تقویم انتشار
+            </div>
+          </div>
+        )}
+
+        {activeModal === "pages" && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
+            <div className="bg-[#111] border border-white/10 rounded-3xl p-8">
+              عنوان صفحات و تقویم انتشار
+            </div>
+          </div>
         )}
       </div>
     </div>
