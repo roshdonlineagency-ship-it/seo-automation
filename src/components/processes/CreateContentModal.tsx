@@ -9,13 +9,13 @@ interface Prompt {
 }
 
 interface Props {
-  onClose: () => void;
   projectId: number;
+  onClose: () => void;
 }
 
 export default function CreateContentModal({
-  onClose,
   projectId,
+  onClose,
 }: Props) {
   const [step, setStep] = useState(1);
 
@@ -23,26 +23,36 @@ export default function CreateContentModal({
   const [targetPage, setTargetPage] = useState("");
 
   const [prompts, setPrompts] = useState<Prompt[]>([]);
-  const [promptId, setPromptId] = useState("");
+  const [selectedPromptId, setSelectedPromptId] = useState("");
+
   const [selectedPrompt, setSelectedPrompt] =
     useState<Prompt | null>(null);
 
   useEffect(() => {
+    if (!projectId) return;
+
     loadPrompts();
-  }, []);
+  }, [projectId]);
 
   async function loadPrompts() {
-    const res = await fetch(
-      `/api/prompts?projectId=${projectId}`
-    );
+    try {
+      const res = await fetch(
+        `/api/prompts?projectId=${projectId}`
+      );
 
-    const data = await res.json();
-    setPrompts(data);
+      const data = await res.json();
+
+      if (Array.isArray(data)) {
+        setPrompts(data);
+      }
+    } catch (error) {
+      console.error(error);
+    }
   }
 
   const handleSubmit = () => {
     const prompt = prompts.find(
-      (p) => p.id === Number(promptId)
+      (p) => p.id === Number(selectedPromptId)
     );
 
     if (!prompt) return;
@@ -54,7 +64,7 @@ export default function CreateContentModal({
   const finalPrompt = selectedPrompt
     ? `${selectedPrompt.text}
 
-موضوع محتوا:
+موضوع:
 ${topic}
 
 صفحه هدف لینک سازی:
@@ -63,12 +73,18 @@ ${targetPage}`
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-5">
-      <div className="w-full max-w-3xl bg-[#111111] border border-white/10 rounded-3xl overflow-hidden">
+      <div className="w-full max-w-4xl bg-[#111111] border border-white/10 rounded-3xl overflow-hidden">
 
         <div className="border-b border-white/10 px-6 py-5 flex items-center justify-between">
-          <h3 className="font-semibold">
-            درج محتوا
-          </h3>
+          <div>
+            <p className="text-white/40 text-xs mb-1">
+              فرایند
+            </p>
+
+            <h3 className="font-semibold">
+              درج محتوا
+            </h3>
+          </div>
 
           <button
             onClick={onClose}
@@ -80,35 +96,37 @@ ${targetPage}`
 
         <div className="p-6">
 
-          {/* STEP 1 */}
-
           {step === 1 && (
             <div className="space-y-4">
 
               <input
+                type="text"
                 value={topic}
                 onChange={(e) =>
                   setTopic(e.target.value)
                 }
                 placeholder="موضوع محتوا..."
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500"
               />
 
               <input
+                type="text"
                 value={targetPage}
                 onChange={(e) =>
                   setTargetPage(e.target.value)
                 }
                 placeholder="صفحه تارگت لینک سازی..."
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500"
               />
 
               <select
-                value={promptId}
+                value={selectedPromptId}
                 onChange={(e) =>
-                  setPromptId(e.target.value)
+                  setSelectedPromptId(
+                    e.target.value
+                  )
                 }
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500"
               >
                 <option value="">
                   انتخاب پرامپت
@@ -129,33 +147,33 @@ ${targetPage}`
                 disabled={
                   !topic ||
                   !targetPage ||
-                  !promptId
+                  !selectedPromptId
                 }
-                className="bg-violet-600 hover:bg-violet-500 disabled:opacity-40 px-6 py-3 rounded-xl"
+                className="bg-violet-600 hover:bg-violet-500 disabled:opacity-40 px-6 py-3 rounded-xl text-sm font-medium"
               >
                 ثبت
               </button>
             </div>
           )}
 
-          {/* STEP 2 */}
-
           {step === 2 && (
             <div>
 
               <div className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-5">
 
-                <div className="mb-4">
+                <div className="mb-5">
                   <p className="text-white/40 text-xs mb-1">
                     موضوع
                   </p>
+
                   <p>{topic}</p>
                 </div>
 
-                <div className="mb-4">
+                <div className="mb-5">
                   <p className="text-white/40 text-xs mb-1">
-                    صفحه تارگت
+                    صفحه هدف لینک سازی
                   </p>
+
                   <p>{targetPage}</p>
                 </div>
 
@@ -163,6 +181,7 @@ ${targetPage}`
                   <p className="text-white/40 text-xs mb-1">
                     پرامپت انتخابی
                   </p>
+
                   <p>{selectedPrompt?.name}</p>
                 </div>
 
@@ -184,19 +203,20 @@ ${targetPage}`
 
                 <button
                   onClick={() => setStep(1)}
-                  className="bg-white/5 border border-white/10 px-5 py-3 rounded-xl"
+                  className="bg-white/5 border border-white/10 px-6 py-3 rounded-xl text-sm"
                 >
                   بازگشت
                 </button>
 
                 <button
                   onClick={onClose}
-                  className="bg-violet-600 px-5 py-3 rounded-xl"
+                  className="bg-violet-600 hover:bg-violet-500 px-6 py-3 rounded-xl text-sm"
                 >
                   تایید نهایی
                 </button>
 
               </div>
+
             </div>
           )}
 
