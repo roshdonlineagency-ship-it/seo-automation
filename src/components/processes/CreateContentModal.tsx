@@ -232,7 +232,7 @@ ${JSON.stringify(reviewReport, null, 2)}
   };
 
   // --- ۵. توابع پیشرفته مدیریت و هوشمندسازی فرآیند تصاویر (مرحله ۴) ---
- // مرحله ۴: تولید ۳ ایده تصویر با Groq (نسخه بهینه، همزمان و ضد قفل)
+  // مرحله ۴: تولید ۳ ایده تصویر با Groq (نسخه بهینه، همزمان و ضد قفل)
   const generateImageIdeas = async () => {
     setStep(4);
     setIsGeneratingIdeas(true);
@@ -349,7 +349,8 @@ ${JSON.stringify(reviewReport, null, 2)}
       alert("خطا در ایجاد پرامپت یا ساختار سئو تصاویر. اتصال شبکه را بررسی کنید."); 
     }
   }; 
-   // --- ۶. فرآیند نهایی آپلود تصاویر در هسته وردپرس و انتشار بریف مقاله ---
+  
+  // --- ۶. فرآیند نهایی آپلود تصاویر در هسته وردپرس و انتشار بریف مقاله ---
   const handleFinalPublish = async () => {
     if (!articleData) return;
     setPublishing(true);
@@ -689,160 +690,154 @@ ${JSON.stringify(reviewReport, null, 2)}
             <div className="space-y-6">
               {isGeneratingIdeas ? (
                 <div className="flex flex-col items-center justify-center py-20 space-y-4">
-                  <div className="w-10 h-10 border-4 border-violet-500 border-t-transparent rounded-full animate-spin" />
-                  <p className="text-sm text-white/50 animate-pulse font-medium">در حال واکشی اطلاعات، تحلیل متن و استخراج ۳ ایده خلاقانه بر پایه هوش مصنوعی Groq...</p>
+                  <div className="w-10 h-10 border-4 border-violet-500 border-t-transparent rounded-full animate-spin"></div>
+                  <p className="text-sm text-white/50 animate-pulse">در حال دریافت و ساختاردهی به ایده‌های تصویر هوشمند...</p>
+                </div>
+              ) : published ? (
+                <div className="bg-emerald-500/10 border border-emerald-500/30 p-8 rounded-2xl text-center space-y-4">
+                  <div className="text-emerald-400 text-4xl">🎉</div>
+                  <h4 className="text-lg font-bold text-emerald-400">مقاله با موفقیت در وردپرس منتشر شد!</h4>
+                  <p className="text-xs text-white/70">محتوا به همراه تمام تصاویر و تنظیمات سئو در سایت قرار گرفت.</p>
+                  <a href={published} target="_blank" rel="noreferrer" className="inline-block bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2.5 rounded-xl text-xs font-semibold transition-colors">
+                    مشاهده پست منتشر شده ↗
+                  </a>
                 </div>
               ) : (
                 <div className="space-y-6">
-                  <div className="bg-violet-500/5 border border-violet-500/20 p-4 rounded-xl">
-                    <h4 className="text-sm font-bold text-violet-400">🎨 استودیو فرمولاسیون و بهینه‌سازی تصاویر</h4>
-                    <p className="text-xs text-white/50 mt-1">بخش‌هایی که تیک نیاز به تصویر آن‌ها فعال بوده است در زیر فهرست شده‌اند. برای هر بخش ایده را انتخاب یا بنویسید، پرامپت و دیتای سئو را به صورت خودکار بسازید.</p>
-                  </div>
+                  {Object.keys(imageAssets).map((key) => {
+                    const asset = imageAssets[key];
+                    return (
+                      <div key={key} className="p-5 rounded-2xl border border-white/10 bg-white/5 space-y-4">
+                        <div className="border-b border-white/5 pb-2">
+                          <span className="text-xs text-violet-400 font-bold bg-violet-500/10 px-3 py-1 rounded-full">{asset.heading}</span>
+                        </div>
 
-                  {Object.keys(imageAssets).length === 0 ? (
-                    <div className="text-center py-10 text-white/30 text-xs">هیچ سکشنی برای درج تصویر انتخاب نشده است. می‌توانید به گام قبل بازگردید یا مستقیما منتشر کنید.</div>
-                  ) : (
-                    Object.keys(imageAssets).map((key) => {
-                      const asset = imageAssets[key];
-                      return (
-                        <div key={key} className="p-5 bg-white/5 border border-white/10 rounded-2xl space-y-4 transition-colors hover:border-white/20">
-                          <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                            <h5 className="text-xs font-bold text-violet-400">{asset.heading}</h5>
-                            <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded text-white/40">Section ID: {key}</span>
-                          </div>
+                        {/* انتخاب ایده هوش مصنوعی */}
+                        <div className="space-y-2">
+                          <label className="block text-[11px] text-white/40">ایده‌های تصویر پیشنهادی سیستم:</label>
+                          {asset.ideas.map((idea, index) => (
+                            <label key={index} className="flex items-start gap-3 p-3 rounded-xl bg-black/20 border border-white/5 cursor-pointer hover:border-white/10 transition-colors">
+                              <input
+                                type="radio"
+                                name={`selected-idea-${key}`}
+                                value={idea}
+                                checked={asset.selectedIdea === idea}
+                                onChange={(e) => setImageAssets(prev => ({
+                                  ...prev,
+                                  [key]: { ...prev[key], selectedIdea: e.target.value }
+                                }))}
+                                className="mt-0.5 text-violet-600 focus:ring-violet-500 rounded-full"
+                              />
+                              <span className="text-xs text-white/80 leading-5">{idea}</span>
+                            </label>
+                          ))}
+                        </div>
 
-                          {/* نمایش ۳ ایده خروجی Groq */}
-                          <div className="space-y-1.5">
-                            <label className="text-[11px] text-white/40 block">یکی از ۳ ایده پیشنهادی هوش مصنوعی را انتخاب کنید:</label>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                              {asset.ideas.map((idea) => (
-                                <button
-                                  key={idea}
-                                  type="button"
-                                  onClick={() => setImageAssets(prev => ({
+                        {/* ایده سفارشی */}
+                        <div className="space-y-1.5">
+                          <label className="block text-[11px] text-white/40">یا وارد کردن ایده دلخواه دستی شما:</label>
+                          <input
+                            type="text"
+                            value={asset.customIdea}
+                            onChange={(e) => setImageAssets(prev => ({
+                              ...prev,
+                              [key]: { ...prev[key], customIdea: e.target.value }
+                            }))}
+                            placeholder="ایده اختصاصی خود را در صورت نیاز اینجا بنویسید..."
+                            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-violet-500"
+                          />
+                        </div>
+
+                        {/* دکمه پردازش نهایی پرامپت سئو عکس */}
+                        <div className="flex justify-end">
+                          <button
+                            onClick={() => finalizeImageAssets(key)}
+                            className="bg-zinc-800 hover:bg-zinc-700 text-white text-xs px-4 py-2 rounded-xl border border-white/5 transition-colors"
+                          >
+                            ⚡ مهندسی پرامپت و اطلاعات سئو عکس
+                          </button>
+                        </div>
+
+                        {/* نمایش خروجی‌های تولید شده در صورتی که آماده باشند */}
+                        {(asset.generatedPrompt || asset.fileName || asset.altText) && (
+                          <div className="bg-black/30 border border-white/5 p-4 rounded-xl space-y-3.5 text-xs">
+                            {asset.generatedPrompt && (
+                              <div className="space-y-1">
+                                <span className="text-violet-400 font-bold block">پرامپت توسعه‌یافته برای هوش مصنوعی (DALL-E / Midjourney):</span>
+                                <div className="bg-black/50 p-2.5 rounded-lg border border-white/5 font-mono text-white/70 text-[11px] select-all whitespace-pre-wrap">
+                                  {asset.generatedPrompt}
+                                </div>
+                              </div>
+                            )}
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div className="space-y-1">
+                                <span className="text-emerald-400 font-bold block">نام فایل سئو شده (SEO Filename):</span>
+                                <input
+                                  type="text"
+                                  value={asset.fileName}
+                                  onChange={(e) => setImageAssets(prev => ({
                                     ...prev,
-                                    [key]: { ...prev[key], selectedIdea: idea }
+                                    [key]: { ...prev[key], fileName: e.target.value }
                                   }))}
-                                  className={`p-3 rounded-xl text-xs text-right border transition-all duration-200 ${asset.selectedIdea === idea && !asset.customIdea ? "border-violet-500 bg-violet-500/10 text-white font-medium" : "border-white/5 bg-black/20 text-white/60 hover:border-white/10"}`}
-                                >
-                                  {idea}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* فیلد ایده شخصی یا ویرایش سفارشی */}
-                          <div className="space-y-1.5">
-                            <label className="text-[11px] text-white/40 block">یا کادر زیر را پر کنید (نوشتن در این کادر اولویت قرار می‌گیرد):</label>
-                            <input 
-                              type="text"
-                              placeholder="ایده بصری سفارشی خودتان را بنویسید یا ترکیب کنید..."
-                              value={asset.customIdea}
-                              onChange={(e) => setImageAssets(prev => ({
-                                ...prev,
-                                [key]: { ...prev[key], customIdea: e.target.value }
-                              }))}
-                              className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2 text-xs text-white placeholder:text-white/20 focus:outline-none focus:border-violet-500"
-                            />
-                          </div>
-
-                          <div className="flex justify-start">
-                            <button
-                              type="button"
-                              onClick={() => finalizeImageAssets(key)}
-                              className="bg-zinc-800 hover:bg-zinc-700 text-white text-xs px-4 py-2 rounded-xl border border-white/5 font-medium transition-colors"
-                            >
-                              ⚙️ تولید پرامپت رندر و متادیتای سئو (JSON API)
-                            </button>
-                          </div>
-
-                          {/* رندر فیلدهای واکشی شده پرامپت و نام فایل/الت */}
-                          {asset.generatedPrompt && (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 mt-2 border-t border-white/5 bg-black/30 p-4 rounded-xl border border-white/5">
-                              <div className="space-y-2">
-                                <span className="text-[11px] text-violet-400 font-bold block">🤖 پرامپت تخصصی تصویرسازی (Midjourney / DALL-E):</span>
-                                <textarea 
-                                  readOnly 
-                                  value={asset.generatedPrompt} 
-                                  className="w-full h-24 bg-black/50 text-[11px] font-mono p-2.5 rounded-lg border border-white/5 text-white/80 resize-none focus:outline-none"
-                                  onClick={(e) => (e.target as HTMLTextAreaElement).select()}
+                                  className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-white focus:outline-none focus:border-emerald-500"
                                 />
-                                <span className="text-[10px] text-white/30 block">برای کپی کردن روی باکس پرامپت فوق کلیک کنید.</span>
                               </div>
-
-                              <div className="space-y-3">
-                                <span className="text-[11px] text-emerald-400 font-bold block">⚙️ فاکتورهای بهینه‌سازی و سئوی تصویر:</span>
-                                
-                                <div className="space-y-1">
-                                  <label className="text-[10px] text-white/40">نام فایل تصویر (قابل ویرایش):</label>
-                                  <input 
-                                    type="text" 
-                                    value={asset.fileName}
-                                    onChange={(e) => setImageAssets(prev => ({
-                                      ...prev,
-                                      [key]: { ...prev[key], fileName: e.target.value }
-                                    }))}
-                                    className="w-full bg-black/40 border border-white/10 p-2 rounded-lg text-xs font-mono text-white"
-                                  />
-                                </div>
-
-                                <div className="space-y-1">
-                                  <label className="text-[10px] text-white/40">متن جایگزین تصویر (Alt Text):</label>
-                                  <input 
-                                    type="text" 
-                                    value={asset.altText}
-                                    onChange={(e) => setImageAssets(prev => ({
-                                      ...prev,
-                                      [key]: { ...prev[key], altText: e.target.value }
-                                    }))}
-                                    className="w-full bg-black/40 border border-white/10 p-2 rounded-lg text-xs text-white"
-                                  />
-                                </div>
-
-                                <div className="space-y-1">
-                                  <label className="text-[10px] text-white/40 block">بارگذاری فایل تصویر تولید شده:</label>
-                                  <input 
-                                    type="file" 
-                                    accept="image/*"
-                                    onChange={(e) => {
-                                      const selectedFile = e.target.files?.[0];
-                                      if (selectedFile) {
-                                        setImageAssets(prev => ({ ...prev, [key]: { ...prev[key], file: selectedFile } }));
-                                      }
-                                    }}
-                                    className="text-xs text-white/50 file:bg-zinc-800 file:text-white file:border-0 file:px-3 file:py-1.5 file:rounded-lg file:ml-3 file:cursor-pointer hover:file:bg-zinc-700" 
-                                  />
-                                </div>
+                              <div className="space-y-1">
+                                <span className="text-emerald-400 font-bold block">متن جایگزین عکس (Alt Text):</span>
+                                <input
+                                  type="text"
+                                  value={asset.altText}
+                                  onChange={(e) => setImageAssets(prev => ({
+                                    ...prev,
+                                    [key]: { ...prev[key], altText: e.target.value }
+                                  }))}
+                                  className="w-full bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-white focus:outline-none focus:border-emerald-500"
+                                />
                               </div>
                             </div>
+                          </div>
+                        )}
+
+                        {/* بخش لود فیزیکی فایل نهایی */}
+                        <div className="space-y-1.5 pt-2">
+                          <label className="block text-[11px] text-white/40">انتخاب فایل فیزیکی تصویر نهایی رندر شده جهت بارگذاری:</label>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setImageAssets(prev => ({ ...prev, [key]: { ...prev[key], file } }));
+                              }
+                            }}
+                            className="text-xs text-white/60 file:ml-4 file:py-1.5 file:px-3.5 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-violet-600 file:text-white hover:file:bg-violet-500 cursor-pointer"
+                          />
+                          {asset.file && (
+                            <span className="text-xs text-emerald-400 block mt-1">✓ تصویر آماده آپلود است: {asset.file.name}</span>
                           )}
                         </div>
-                      );
-                    })
-                  )}
-                </div>
-              )}
+                      </div>
+                    );
+                  })}
 
-              <div className="border-t border-white/10 pt-5 flex gap-3">
-                <button 
-                  onClick={() => setStep(3)} 
-                  className="bg-white/5 border border-white/10 px-6 py-3.5 rounded-xl text-sm font-medium text-white hover:bg-white/10 transition-colors"
-                >
-                  بازگشت به محتوا
-                </button>
-                <button
-                  onClick={handleFinalPublish}
-                  disabled={publishing}
-                  className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 py-3.5 rounded-xl text-sm font-bold text-white shadow-lg shadow-blue-600/20 transition-all text-center"
-                >
-                  {publishing ? "در حال پردازش، بارگذاری رسانه‌ها و انتشار..." : "اتمام فرآیند و درج تصویرمحور در وردپرس 🚀"}
-                </button>
-              </div>
-
-              {published && (
-                <div className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-xl text-center">
-                  <p className="text-emerald-400 text-sm font-medium mb-1">🎉 بریف مقاله شما با موفقیت به همراه تمامی تصاویر پیوست و سئو شده در وردپرس درج شد!</p>
-                  <a href={published} target="_blank" rel="noopener noreferrer" className="text-white text-xs underline font-bold hover:text-violet-400 transition-colors">📦 مشاهده لینک زنده مقاله منتشر شده روی وب‌سایت</a>
+                  {/* نوار ناوبری دکمه‌های پایینی مرحله ۴ */}
+                  <div className="border-t border-white/10 pt-5 flex gap-3">
+                    <button 
+                      onClick={() => setStep(3)} 
+                      className="bg-white/5 border border-white/10 px-6 py-3 rounded-xl text-sm text-white font-medium hover:bg-white/10 transition-colors"
+                    >
+                      بازگشت به میز تحریریه
+                    </button>
+                    
+                    <button
+                      onClick={handleFinalPublish}
+                      disabled={publishing}
+                      className="flex-1 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 px-6 py-3 rounded-xl text-sm font-bold text-white shadow-lg shadow-violet-600/20 transition-colors"
+                    >
+                      {publishing ? "در حال آپلود مدیا و تزریق ساختار بومی مقاله در وردپرس..." : "🚀 تایید نهایی و انتشار مستقیم در هسته وردپرس"}
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
