@@ -1,23 +1,14 @@
-export default function Step1({
-  topic,
-  setTopic,
-  targetPage,
-  setTargetPage,
-  loading,
-  prompts,
-  pIds,
-  setPIds,
-  onNext,
-}: any) {
-  
-  // تابع کمکی برای آپدیت فیلدهای pIds
+export default function Step1(props: any) {
+  // جدا کردن پراپ‌ها در یک خط امن
+  const { topic, setTopic, targetPage, setTargetPage, loading, prompts, pIds, setPIds, onNext } = props;
+
+  // تابع کمکی برای آپدیت فیلدها
   const updatePId = (key: string, value: string) => {
     setPIds((prev: any) => ({ ...prev, [key]: value }));
   };
 
   return (
     <div className="space-y-5">
-      {/* بخش ورودی متن */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <label className="text-xs text-white/40 font-medium">موضوع کلیدی محتوا:</label>
@@ -52,72 +43,46 @@ export default function Step1({
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            
-            {/* ۱. پرامپت تولید ساختار */}
+            {/* ۱. ساختار */}
             <div>
               <label className="block text-white/40 text-[11px] mb-1.5">۱. ساختار بریف:</label>
-              <select 
-                value={pIds.gen} 
-                onChange={(e) => updatePId("gen", e.target.value)} 
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-violet-500"
-              >
+              <select value={pIds.gen} onChange={(e) => updatePId("gen", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-violet-500">
                 <option value="" className="bg-[#111]">انتخاب کنید</option>
                 {prompts.map((p: any) => <option key={p.id} value={p.id} className="bg-[#111]">{p.name}</option>)}
               </select>
             </div>
-
-            {/* ۲. پرامپت بازبینی */}
+            {/* ۲. بازبینی */}
             <div>
               <label className="block text-white/40 text-[11px] mb-1.5">۲. بازبینی (Revision):</label>
-              <select 
-                value={pIds.rev} 
-                onChange={(e) => updatePId("rev", e.target.value)} 
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-violet-500"
-              >
+              <select value={pIds.rev} onChange={(e) => updatePId("rev", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-violet-500">
                 <option value="" className="bg-[#111]">انتخاب کنید</option>
                 {prompts.map((p: any) => <option key={p.id} value={p.id} className="bg-[#111]">{p.name}</option>)}
               </select>
             </div>
-
-            {/* ۳. پرامپت ایده تصویر */}
+            {/* ۳. ایده تصویر */}
             <div>
               <label className="block text-white/40 text-[11px] mb-1.5">۳. ایده تصویر:</label>
-              <select 
-                value={pIds.idea} 
-                onChange={(e) => updatePId("idea", e.target.value)} 
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-violet-500"
-              >
+              <select value={pIds.idea} onChange={(e) => updatePId("idea", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-violet-500">
                 <option value="" className="bg-[#111]">انتخاب کنید</option>
                 {prompts.map((p: any) => <option key={p.id} value={p.id} className="bg-[#111]">{p.name}</option>)}
               </select>
             </div>
-
-            {/* ۴. پرامپت ترسیم */}
+            {/* ۴. ترسیم */}
             <div>
               <label className="block text-white/40 text-[11px] mb-1.5">۴. ترسیم (Draw):</label>
-              <select 
-                value={pIds.draw} 
-                onChange={(e) => updatePId("draw", e.target.value)} 
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-violet-500"
-              >
+              <select value={pIds.draw} onChange={(e) => updatePId("draw", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-violet-500">
                 <option value="" className="bg-[#111]">انتخاب کنید</option>
                 {prompts.map((p: any) => <option key={p.id} value={p.id} className="bg-[#111]">{p.name}</option>)}
               </select>
             </div>
-
-            {/* ۵. پرامپت سئو */}
+            {/* ۵. متا سئو */}
             <div>
               <label className="block text-white/40 text-[11px] mb-1.5">۵. متا سئو:</label>
-              <select 
-                value={pIds.meta} 
-                onChange={(e) => updatePId("meta", e.target.value)} 
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-violet-500"
-              >
+              <select value={pIds.meta} onChange={(e) => updatePId("meta", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-violet-500">
                 <option value="" className="bg-[#111]">انتخاب کنید</option>
                 {prompts.map((p: any) => <option key={p.id} value={p.id} className="bg-[#111]">{p.name}</option>)}
               </select>
             </div>
-
           </div>
         </div>
       )}
