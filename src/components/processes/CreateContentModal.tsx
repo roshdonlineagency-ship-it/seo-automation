@@ -271,8 +271,23 @@ ${JSON.stringify(reviewReport, null, 2)}
             if (!res.ok) throw new Error(`API Status: ${res.status}`);
             
             const data = await res.json();
-            const parsedJson = cleanAndParseJson(data.content);
-            const ideas = parsedJson.ideas || ["خطا در دریافت ایده اول", "ایده دوم", "ایده سوم"];
+           const parsedJson = cleanAndParseJson(data.content);
+
+// 🟢 استخراج هوشمند ایده؛ حتی اگر مدل ساختار را رعایت نکرده باشد
+let ideas = ["خطا در ساخت ایده اول", "ایده دوم", "ایده سوم"];
+if (Array.isArray(parsedJson)) {
+  ideas = parsedJson;
+} else if (parsedJson && typeof parsedJson === "object") {
+  // بررسی کلیدهای احتمالی که هوش مصنوعی ممکن است بسازد
+  const potentialArray = parsedJson.ideas || parsedJson.image_ideas || parsedJson.suggestions;
+  if (Array.isArray(potentialArray)) {
+    ideas = potentialArray;
+  } else {
+    // اگر هیچ کلیدی نبود اما خودش یک آرایه در دل آبجکت داشت
+    const foundArray = Object.values(parsedJson).find(val => Array.isArray(val));
+    if (foundArray) ideas = foundArray as string[];
+  }
+}
 
             newAssets[key] = { 
               sectionId: key, 
@@ -311,42 +326,65 @@ ${JSON.stringify(reviewReport, null, 2)}
     }
   };
 
-  const finalizeImageAssets = async (key: string) => {
+const finalizeImageAssets = async (key: string) => {
     const asset = imageAssets[key];
-    const finalIdea = asset.customIdea || asset.selectedIdea;
-    const drawPromptBase = prompts.find(p => p.id === Number(pIds.draw))?.text;
-    const metaPromptBase = prompts.find(p => p.id === Number(pIds.meta))?.text;
+    const finalIdea = asset ? (asset.customIdea || asset.selectedIdea) : "";
+    
+    const drawPromptBase = prompts.find(p => p.id === Number(pIds.draw))?.text || "";
+    const metaPromptBase = prompts.find(p => p.id === Number(pIds.meta))?.text || "";
+
+    if (!drawPromptBase || !metaPromptBase) {
+      alert("لطفاً مطمئن شوید پرامپت‌های ۴ و ۵ را در مرحله اول انتخاب کرده‌اید.");
+      return;
+    }
 
     try {
-      // الف) دریافت پرامپت تخصصی رندر یا ابزارهای تصویرسازی به صورت JSON
+      // الف) دریافت پرامپت تخصصی رندر یا ابزارهای تصویرسازی
       const resDraw = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: "groq", prompt: `${drawPromptBase}\n\nایده محوری برای توسعه پرامپت: ${finalIdea}` })
       });
+      if (!resDraw.ok) throw new Error(`سرور هوش مصنوعی برای پرامپت تصویر پاسخ نداد (کد خطا: ${resDraw.status})`);
+      
       const drawData = await resDraw.json();
-      const parsedDraw = cleanAndParseJson(drawData.content);
+      let parsedDraw;
+      try {
+        parsedDraw = cleanAndParseJson(drawData.content);
+      } catch (e) {
+        throw new Error("خروجی Groq برای پرامپت تصویر ساختار JSON معتبری ندارد و کپشن اضافه تولید کرده است.");
+      }
 
-      // ب) دریافت ساختار اطلاعات نام فایل و متن جایگزین تصویر به صورت JSON
+      // ب) دریافت ساختار اطلاعات نام فایل و متن جایگزین تصویر
       const resMeta = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: "groq", prompt: `${metaPromptBase}\n\nایده نهایی برای سئو تصویر: ${finalIdea}` })
       });
+      if (!resMeta.ok) throw new Error(`سرور هوش مصنوعی برای دیتای سئو تصویر پاسخ نداد (کد خطا: ${resMeta.status})`);
+      
       const metaData = await resMeta.json();
-      const parsedMeta = cleanAndParseJson(metaData.content);
+      let parsedMeta;
+      try {
+        parsedMeta = cleanAndParseJson(metaData.content);
+      } catch (e) {
+        throw new Error("خروجی Groq برای دیتای سئو تصویر ساختار JSON معتبری ندارد.");
+      }
 
+      // اعمال هوشمند فیلدها با در نظر گرفتن کلیدهای احتمالی مختلف که هوش مصنوعی می‌سازد
       setImageAssets(prev => ({
         ...prev,
         [key]: { 
           ...prev[key], 
-          generatedPrompt: parsedDraw.image_prompt || "", 
-          fileName: parsedMeta.filename || "perfume-image.jpg", 
-          altText: parsedMeta.alt_text || "تصویر مرتبط با محتوای سایت" 
+          generatedPrompt: parsedDraw.image_prompt || parsedDraw.prompt || parsedDraw.text || "", 
+          fileName: parsedMeta.filename || parsedMeta.file_name || "perfume-image.jpg", 
+          altText: parsedMeta.alt_text || parsedMeta.alt || "تصویر مرتبط با محتوای سایت" 
         }
       }));
-    } catch (e) { 
-      alert("خطا در ایجاد پرامپت یا ساختار سئو تصاویر. اتصال شبکه را بررسی کنید."); 
+    } catch (e: any) { 
+      console.error("Error in finalizeImageAssets:", e);
+      // نمایش دلیل واقعی خطا به کاربر
+      alert(`خطا در پردازش: ${e.message}`); 
     }
   };
 
