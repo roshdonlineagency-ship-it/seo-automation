@@ -238,15 +238,17 @@ ${JSON.stringify(reviewReport, null, 2)}
     }
   };
 
-  // کامپوننت کمکی داخلی برای رندر فیلدهای تعاملی
+  // کامپوننت کمکی داخلی اصلاح شده با تایپ اختیاری extraElement
   const RenderEditableBlock = ({ 
     label, 
     fieldKey, 
-    value 
+    value,
+    extraElement
   }: { 
     label: string, 
     fieldKey: string, 
-    value: string 
+    value: string,
+    extraElement?: React.ReactNode
   }) => (
     <div className={`p-5 rounded-2xl border transition-colors ${approvedFields[fieldKey] ? "bg-emerald-500/5 border-emerald-500/30" : "bg-white/5 border-white/10"}`}>
       <div className="flex items-center justify-between mb-3">
@@ -270,6 +272,9 @@ ${JSON.stringify(reviewReport, null, 2)}
       <div className="text-sm text-white/90 leading-7 whitespace-pre-wrap mb-4 bg-black/20 p-3 rounded-xl border border-white/5">
         {value}
       </div>
+
+      {/* نمایش المان تصویر یا موارد اضافه در صورت وجود */}
+      {extraElement && <div className="mb-4">{extraElement}</div>}
 
       {!approvedFields[fieldKey] && (
         <div className="mt-3">
