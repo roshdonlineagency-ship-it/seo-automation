@@ -3,7 +3,8 @@ import { sql } from '@vercel/postgres';
 
 export async function POST(req: Request) {
   try {
-    const { title, content } = await req.json();
+    // اضافه کردن slug و excerpt که از فرانت‌اند ارسال می‌شوند
+    const { title, content, slug, excerpt } = await req.json();
 
     const { rows } = await sql`SELECT wordpress_url, wordpress_username, wordpress_app_password FROM brand_info LIMIT 1`;
     
@@ -26,14 +27,16 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         title,
         content,
-        status: 'draft',
+        slug, // اعمال نامک سئوشده
+        excerpt, // اعمال متا دیسکریپشن در خلاصه وردپرس
+        status: 'draft', // وضعیت پیش‌نویس جهت بررسی نهایی شما
       }),
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      return NextResponse.json({ error: data.message }, { status: 500 });
+      return NextResponse.json({ error: data.message }, { status: response.status });
     }
 
     return NextResponse.json({ 
