@@ -1,5 +1,4 @@
 "use client";
-
 import { useEffect, useState } from "react";
 
 interface Prompt {
@@ -21,6 +20,9 @@ export default function CreateContentModal({ projectId, onClose }: Props) {
   const [selectedPromptId, setSelectedPromptId] = useState("");
   const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
   const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [result, setResult] = useState("");
+  const [model, setModel] = useState<'claude' | 'openai'>('claude');
 
   useEffect(() => {
     if (!projectId) return;
@@ -30,18 +32,11 @@ export default function CreateContentModal({ projectId, onClose }: Props) {
   async function loadPrompts() {
     try {
       setLoading(true);
-      const id = Number(projectId);
-      console.log("fetching prompts for projectId:", id);
-      const res = await fetch(`/api/prompts?projectId=${id}`);
+      const res = await fetch(`/api/prompts?projectId=${Number(projectId)}`);
       const data = await res.json();
-      console.log("prompts response:", data);
-      if (Array.isArray(data)) {
-        setPrompts(data);
-      } else {
-        console.error("unexpected response:", data);
-      }
+      if (Array.isArray(data)) setPrompts(data);
     } catch (error) {
-      console.error("error loading prompts:", error);
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -58,11 +53,29 @@ export default function CreateContentModal({ projectId, onClose }: Props) {
     ? `${selectedPrompt.text}\n\nموضوع:\n${topic}\n\nصفحه هدف لینک سازی:\n${targetPage}`
     : "";
 
+  const handleGenerate = async () => {
+    setGenerating(true);
+    setStep(3);
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt: finalPrompt, model }),
+      });
+      const data = await res.json();
+      setResult(data.content || data.error);
+    } catch (error) {
+      setResult('خطا در تولید محتوا');
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-5">
-      <div className="w-full max-w-4xl bg-[#111111] border border-white/10 rounded-3xl overflow-hidden">
+      <div className="w-full max-w-4xl bg-[#111111] border border-white/10 rounded-3xl overflow-hidden max-h-[90vh] overflow-y-auto">
 
-        <div className="border-b border-white/10 px-6 py-5 flex items-center justify-between">
+        <div className="border-b border-white/10 px-6 py-5 flex items-center justify-between sticky top-0 bg-[#111111] z-10">
           <div>
             <p className="text-white/40 text-xs mb-1">فرایند</p>
             <h3 className="font-semibold">درج محتوا</h3>
@@ -71,6 +84,8 @@ export default function CreateContentModal({ projectId, onClose }: Props) {
         </div>
 
         <div className="p-6">
+
+          {/* استپ ۱ */}
           {step === 1 && (
             <div className="space-y-4">
               <input
@@ -87,7 +102,6 @@ export default function CreateContentModal({ projectId, onClose }: Props) {
                 placeholder="صفحه تارگت لینک سازی..."
                 className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500"
               />
-
               {loading ? (
                 <div className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white/20">
                   در حال بارگذاری پرامپت‌ها...
@@ -104,13 +118,10 @@ export default function CreateContentModal({ projectId, onClose }: Props) {
                 >
                   <option value="" className="bg-[#1a1a1a]">انتخاب پرامپت</option>
                   {prompts.map((prompt) => (
-                    <option key={prompt.id} value={prompt.id} className="bg-[#1a1a1a]">
-                      {prompt.name}
-                    </option>
+                    <option key={prompt.id} value={prompt.id} className="bg-[#1a1a1a]">{prompt.name}</option>
                   ))}
                 </select>
               )}
-
               <button
                 onClick={handleSubmit}
                 disabled={!topic || !targetPage || !selectedPromptId}
@@ -121,14 +132,15 @@ export default function CreateContentModal({ projectId, onClose }: Props) {
             </div>
           )}
 
+          {/* استپ ۲ */}
           {step === 2 && (
             <div>
               <div className="bg-white/5 border border-white/10 rounded-2xl p-5 mb-5">
-                <div className="mb-5">
+                <div className="mb-4">
                   <p className="text-white/40 text-xs mb-1">موضوع</p>
                   <p>{topic}</p>
                 </div>
-                <div className="mb-5">
+                <div className="mb-4">
                   <p className="text-white/40 text-xs mb-1">صفحه هدف لینک سازی</p>
                   <p>{targetPage}</p>
                 </div>
@@ -138,27 +150,71 @@ export default function CreateContentModal({ projectId, onClose }: Props) {
                 </div>
               </div>
 
-              <div className="bg-black/30 border border-white/10 rounded-2xl p-5">
+              <div className="bg-black/30 border border-white/10 rounded-2xl p-5 mb-5">
                 <p className="text-white/40 text-xs mb-3">پرامپت نهایی</p>
                 <pre className="whitespace-pre-wrap text-sm leading-7">{finalPrompt}</pre>
               </div>
 
-              <div className="mt-5 flex gap-3">
+              {/* انتخاب مدل */}
+              <div className="flex gap-3 mb-5">
                 <button
-                  onClick={() => setStep(1)}
-                  className="bg-white/5 border border-white/10 px-6 py-3 rounded-xl text-sm"
+                  onClick={() => setModel('claude')}
+                  className={`flex-1 py-3 rounded-xl text-sm border transition-colors ${model === 'claude' ? 'bg-violet-600 border-violet-500' : 'bg-white/5 border-white/10 text-white/60'}`}
                 >
-                  بازگشت
+                  Claude
                 </button>
                 <button
-                  onClick={onClose}
-                  className="bg-violet-600 hover:bg-violet-500 px-6 py-3 rounded-xl text-sm"
+                  onClick={() => setModel('openai')}
+                  className={`flex-1 py-3 rounded-xl text-sm border transition-colors ${model === 'openai' ? 'bg-violet-600 border-violet-500' : 'bg-white/5 border-white/10 text-white/60'}`}
                 >
-                  تایید نهایی
+                  OpenAI
+                </button>
+              </div>
+
+              <div className="flex gap-3">
+                <button onClick={() => setStep(1)} className="bg-white/5 border border-white/10 px-6 py-3 rounded-xl text-sm">
+                  بازگشت
+                </button>
+                <button onClick={handleGenerate} className="flex-1 bg-violet-600 hover:bg-violet-500 px-6 py-3 rounded-xl text-sm font-medium">
+                  تولید محتوا ✨
                 </button>
               </div>
             </div>
           )}
+
+          {/* استپ ۳ - نتیجه */}
+          {step === 3 && (
+            <div>
+              {generating ? (
+                <div className="text-center py-20">
+                  <div className="text-4xl mb-4">✨</div>
+                  <p className="text-white/40 text-sm">در حال تولید محتوا...</p>
+                </div>
+              ) : (
+                <div>
+                  <div className="bg-black/30 border border-white/10 rounded-2xl p-5 mb-5">
+                    <p className="text-white/40 text-xs mb-3">محتوای تولید شده</p>
+                    <pre className="whitespace-pre-wrap text-sm leading-7">{result}</pre>
+                  </div>
+                  <div className="flex gap-3">
+                    <button onClick={() => setStep(2)} className="bg-white/5 border border-white/10 px-6 py-3 rounded-xl text-sm">
+                      بازگشت
+                    </button>
+                    <button
+                      onClick={() => navigator.clipboard.writeText(result)}
+                      className="bg-white/5 border border-white/10 px-6 py-3 rounded-xl text-sm hover:bg-white/10"
+                    >
+                      کپی محتوا
+                    </button>
+                    <button onClick={onClose} className="flex-1 bg-violet-600 hover:bg-violet-500 px-6 py-3 rounded-xl text-sm font-medium">
+                      تایید و بستن
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
       </div>
     </div>
