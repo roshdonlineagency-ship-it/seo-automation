@@ -17,7 +17,7 @@ export async function POST(req: Request) {
       });
       content = message.content[0].type === 'text' ? message.content[0].text : '';
 
-    } else {
+    } else if (model === 'openai') {
       const OpenAI = (await import('openai')).default;
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
       const completion = await openai.chat.completions.create({
@@ -26,6 +26,13 @@ export async function POST(req: Request) {
         messages: [{ role: 'user', content: prompt }],
       });
       content = completion.choices[0].message.content || '';
+
+    } else {
+      const { GoogleGenerativeAI } = await import('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+      const geminiModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const result = await geminiModel.generateContent(prompt);
+      content = result.response.text();
     }
 
     return NextResponse.json({ content });
