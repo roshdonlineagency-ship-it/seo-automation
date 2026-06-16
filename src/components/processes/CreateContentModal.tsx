@@ -26,6 +26,8 @@ export default function CreateContentModal({ projectId, onClose }: Props) {
   const [result, setResult] = useState("");
   const [imageUrl, setImageUrl] = useState("");
   const [model, setModel] = useState<'claude' | 'openai' | 'gemini' | 'groq'>('groq');
+  const [publishing, setPublishing] = useState(false);
+  const [published, setPublished] = useState<string>("");
 
   useEffect(() => {
     if (!projectId) return;
@@ -90,6 +92,25 @@ export default function CreateContentModal({ projectId, onClose }: Props) {
       setImageUrl('error:خطا در تولید تصویر');
     } finally {
       setGeneratingImage(false);
+    }
+  };
+
+  const handlePublishToWordPress = async () => {
+    setPublishing(true);
+    try {
+      const res = await fetch('/api/wordpress', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: topic, content: result }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPublished(data.link);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setPublishing(false);
     }
   };
 
@@ -242,6 +263,24 @@ export default function CreateContentModal({ projectId, onClose }: Props) {
                     >
                       📋 کپی
                     </button>
+                    {published ? (
+                      <a
+                        href={published}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex-1 bg-emerald-600 hover:bg-emerald-500 px-6 py-3 rounded-xl text-sm font-medium transition-colors text-center"
+                      >
+                        ✅ مشاهده در وردپرس
+                      </a>
+                    ) : (
+                      <button
+                        onClick={handlePublishToWordPress}
+                        disabled={publishing}
+                        className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 px-6 py-3 rounded-xl text-sm font-medium transition-colors"
+                      >
+                        {publishing ? 'در حال ارسال...' : '📤 ارسال به وردپرس'}
+                      </button>
+                    )}
                     <button
                       onClick={handleGenerateImage}
                       className="flex-1 bg-emerald-600 hover:bg-emerald-500 px-6 py-3 rounded-xl text-sm font-medium transition-colors"
@@ -285,10 +324,9 @@ export default function CreateContentModal({ projectId, onClose }: Props) {
                     <button onClick={() => setStep(3)} className="bg-white/5 border border-white/10 px-6 py-3 rounded-xl text-sm hover:bg-white/10 transition-colors">
                       بازگشت
                     </button>
-                    
- <button onClick={() => window.open(imageUrl, '_blank')} className="bg-white/5 border border-white/10 px-6 py-3 rounded-xl text-sm hover:bg-white/10 transition-colors">
-  دانلود
-</button>
+                    <button onClick={() => window.open(imageUrl, '_blank')} className="bg-white/5 border border-white/10 px-6 py-3 rounded-xl text-sm hover:bg-white/10 transition-colors">
+                      دانلود
+                    </button>
                     <button onClick={onClose} className="flex-1 bg-violet-600 hover:bg-violet-500 px-6 py-3 rounded-xl text-sm font-medium transition-colors">
                       تایید و بستن ✓
                     </button>
