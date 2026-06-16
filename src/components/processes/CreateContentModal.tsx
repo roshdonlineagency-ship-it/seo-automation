@@ -23,7 +23,7 @@ export default function CreateContentModal({ projectId, onClose }: Props) {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState("");
-  const [model, setModel] = useState<'claude' | 'openai' | 'gemini'>('gemini');
+  const [model, setModel] = useState<'claude' | 'openai' | 'gemini' | 'groq'>('groq');
 
   useEffect(() => {
     if (!projectId) return;
@@ -163,26 +163,32 @@ export default function CreateContentModal({ projectId, onClose }: Props) {
 
               {/* انتخاب مدل */}
               <p className="text-white/40 text-xs mb-3">انتخاب مدل هوش مصنوعی</p>
-              <div className="flex gap-3 mb-5">
-                <button
-                  onClick={() => setModel('gemini')}
-                  className={`flex-1 py-3 rounded-xl text-sm border transition-colors ${model === 'gemini' ? 'bg-violet-600 border-violet-500 text-white' : 'bg-white/5 border-white/10 text-white/60 hover:border-white/20'}`}
-                >
-                  ✨ Gemini
-                </button>
-                <button
-                  onClick={() => setModel('claude')}
-                  className={`flex-1 py-3 rounded-xl text-sm border transition-colors ${model === 'claude' ? 'bg-violet-600 border-violet-500 text-white' : 'bg-white/5 border-white/10 text-white/60 hover:border-white/20'}`}
-                >
-                  🤖 Claude
-                </button>
-                <button
-                  onClick={() => setModel('openai')}
-                  className={`flex-1 py-3 rounded-xl text-sm border transition-colors ${model === 'openai' ? 'bg-violet-600 border-violet-500 text-white' : 'bg-white/5 border-white/10 text-white/60 hover:border-white/20'}`}
-                >
-                  💬 OpenAI
-                </button>
-              </div>
+            <div className="flex gap-3 mb-5">
+  <button
+    onClick={() => setModel('groq')}
+    className={`flex-1 py-3 rounded-xl text-sm border transition-colors ${model === 'groq' ? 'bg-violet-600 border-violet-500 text-white' : 'bg-white/5 border-white/10 text-white/60 hover:border-white/20'}`}
+  >
+    ⚡ Groq
+  </button>
+  <button
+    onClick={() => setModel('gemini')}
+    className={`flex-1 py-3 rounded-xl text-sm border transition-colors ${model === 'gemini' ? 'bg-violet-600 border-violet-500 text-white' : 'bg-white/5 border-white/10 text-white/60 hover:border-white/20'}`}
+  >
+    ✨ Gemini
+  </button>
+  <button
+    onClick={() => setModel('claude')}
+    className={`flex-1 py-3 rounded-xl text-sm border transition-colors ${model === 'claude' ? 'bg-violet-600 border-violet-500 text-white' : 'bg-white/5 border-white/10 text-white/60 hover:border-white/20'}`}
+  >
+    🤖 Claude
+  </button>
+  <button
+    onClick={() => setModel('openai')}
+    className={`flex-1 py-3 rounded-xl text-sm border transition-colors ${model === 'openai' ? 'bg-violet-600 border-violet-500 text-white' : 'bg-white/5 border-white/10 text-white/60 hover:border-white/20'}`}
+  >
+    💬 OpenAI
+  </button>
+</div>
 
               <div className="flex gap-3">
                 <button
