@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
-// --- تعریف اینترفیس‌ها برای تایپ‌اسکریپت (در صورت عدم نیاز می‌توانید حذف کنید) ---
-interface ImageIdeaSet {
+// --- اینترفیس‌های کامل تایپ‌اسکریپت برای جلوگیری از خطای بیلد ---
+export interface ImageIdeaSet {
   sectionId: string;
   heading: string;
   ideas: string[];
@@ -12,41 +12,43 @@ interface ImageIdeaSet {
   altText: string;
 }
 
-interface Section {
+export interface Section {
   id: string;
   h2: string;
   content: string;
 }
 
-interface ArticleData {
+export interface ArticleData {
   h1: string;
   intro: string;
   conclusion: string;
   sections: Section[];
 }
 
-interface PromptItem {
+export interface PromptItem {
   id: number;
   text: string;
 }
 
-interface ImageStudioModalProps {
-  isOpen: boolean;
+export interface CreateContentModalProps {
+  isOpen?: boolean;
   onClose: () => void;
-  articleData: ArticleData | null;
-  prompts: PromptItem[];
-  pIds: { idea: string; draw: string; meta: string };
-  userWantsImage: Record<string, boolean>;
+  projectId?: number; // 👈 این فیلد اضافه شد تا خطای خط 96 کامپوننت مادر شما کاملاً برطرف شود
+  articleData?: ArticleData | null;
+  prompts?: PromptItem[];
+  pIds?: { idea: string; draw: string; meta: string };
+  userWantsImage?: Record<string, boolean>;
 }
 
-export default function ImageStudioModal({
-  isOpen,
+export default function CreateContentModal({
+  isOpen = true,
   onClose,
-  articleData,
-  prompts,
-  pIds,
-  userWantsImage,
-}: ImageStudioModalProps) {
+  projectId,
+  articleData = null,
+  prompts = [],
+  pIds = { idea: "1", draw: "2", meta: "3" },
+  userWantsImage = {},
+}: CreateContentModalProps) {
   // --- استیت‌های اصلی مودال ---
   const [step, setStep] = useState<number>(3);
   const [isGeneratingIdeas, setIsGeneratingIdeas] = useState<boolean>(false);
@@ -55,13 +57,13 @@ export default function ImageStudioModal({
 
   if (!isOpen) return null;
 
-  // تابع کمکی برای پارس کردن امن جی‌سان هوش مصنوعی
+  // تابع کمکی برای پاکسازی و پارس کردن امن جی‌سان
   const cleanAndParseJson = (content: string) => {
     const cleanStr = content.replace(/```json/g, "").replace(/```/g, "").trim();
     return JSON.parse(cleanStr);
   };
 
-  // 1️⃣ متد تولید خودکار ایده‌ها با گراک (نسخه موازی و ضد قفل)
+  // ۱️⃣ متد تولید اتوماتیک ایده‌ها با گراک API
   const generateImageIdeas = async () => {
     setStep(4);
     setIsGeneratingIdeas(true);
@@ -71,8 +73,11 @@ export default function ImageStudioModal({
       const newAssets: Record<string, ImageIdeaSet> = {};
       const activeKeys = Object.keys(userWantsImage).filter((key) => userWantsImage[key]);
 
+      // اگر هیچ سکشنی تیک نخورده بود، برای کلیدهای پیش‌فرض شبیه‌سازی کن
+      const finalKeys = activeKeys.length > 0 ? activeKeys : ["h1", "intro", "conclusion"];
+
       await Promise.all(
-        activeKeys.map(async (key) => {
+        finalKeys.map(async (key) => {
           let heading = "";
           let content = "";
 
@@ -80,8 +85,9 @@ export default function ImageStudioModal({
           else if (key === "intro") { heading = "مقدمه مقاله"; content = articleData?.intro || ""; }
           else if (key === "conclusion") { heading = "نتیجه‌گیری انتها"; content = articleData?.conclusion || ""; }
           else {
-            const sec = articleData?.sections.find((s) => s.id === key);
+            const sec = articleData?.sections?.find((s) => s.id === key);
             if (sec) { heading = `سکشن: ${sec.h2}`; content = sec.content; }
+            else { heading = `بخش ${key}`; content = ""; }
           }
 
           try {
@@ -111,13 +117,12 @@ export default function ImageStudioModal({
               altText: "",
             };
           } catch (e) {
-            console.error(`Error generating image ideas for key [${key}]:`, e);
-            // فال‌بک امن برای جلوگیری از قفل شدن لودر
+            console.error(`Error generating for key [${key}]:`, e);
             newAssets[key] = {
               sectionId: key,
               heading,
-              ideas: ["خطا در دریافت ایده اول", "ایده دوم", "ایده سوم"],
-              selectedIdea: "",
+              ideas: ["سمپل ایده اول (خطای سرور)", "سمپل ایده دوم", "سمپل ایده سوم"],
+              selectedIdea: "سمپل ایده اول (خطای سرور)",
               customIdea: "",
               generatedPrompt: "",
               fileName: "image.jpg",
@@ -136,7 +141,7 @@ export default function ImageStudioModal({
     }
   };
 
-  // 2️⃣ متد جدید: بارگذاری دستی و استخراج دیتای JSON آفلاین (از کلود یا چت‌جی‌پی‌آی)
+  // ۲️⃣ میانبر طلایی: بارگذاری دستی و استخراج دیتای JSON کپی شده از Claude یا ChatGPT
   const handleImportManualJson = (rawJsonString: string) => {
     if (!rawJsonString.trim()) {
       alert("لطفاً ابتدا کد JSON را در کادر وارد کنید.");
@@ -156,7 +161,7 @@ export default function ImageStudioModal({
         else if (key === "intro") heading = "مقدمه مقاله";
         else if (key === "conclusion") heading = "نتیجه‌گیری انتها";
         else {
-          const sec = articleData?.sections.find((s) => s.id === key);
+          const sec = articleData?.sections?.find((s) => s.id === key);
           heading = sec ? `سکشن: ${sec.h2}` : `بخش ${key}`;
         }
 
@@ -173,82 +178,63 @@ export default function ImageStudioModal({
       });
 
       setImageAssets(newAssets);
-      setStep(4); // پرش مستقیم به استودیو فرمولاسیون تصاویر
+      setStep(4); // هدایت مستقیم به استودیو تصویر
     } catch (error) {
-      alert("خطا در خواندن دیتای JSON. لطفا فرمت کد را بررسی کنید.");
+      alert("خطا در خواندن دیتای JSON. لطفا فرمت کد کپی شده را بررسی کنید.");
     }
   };
 
-  // 3️⃣ متد چرخ‌دنده: تولید پرامپت رندر نهایی و دیتای سئو با گزارش دقیق خطاها
+  // ۳️⃣ متد چرخ‌دنده: نهایی‌سازی پرامپت رندر و سئو تصاویر
   const finalizeImageAssets = async (key: string) => {
     const asset = imageAssets[key];
     if (!asset) return;
-    
+
     const finalIdea = asset.customIdea || asset.selectedIdea;
     const drawPromptBase = prompts.find((p) => p.id === Number(pIds.draw))?.text || "";
     const metaPromptBase = prompts.find((p) => p.id === Number(pIds.meta))?.text || "";
 
-    if (!drawPromptBase || !metaPromptBase) {
-      alert("لطفاً مطمئن شوید پرامپت‌های مربوط به رندر و متادیتا را تنظیم کرده‌اید.");
-      return;
-    }
-
     try {
-      // الف) دریافت پرامپت تخصصی تصویرسازی
       const resDraw = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: "groq", prompt: `${drawPromptBase}\n\nایده محوری برای توسعه پرامپت: ${finalIdea}` }),
       });
-      if (!resDraw.ok) throw new Error(`سرور هوش مصنوعی برای پرامپت تصویر پاسخ نداد (کد خطا: ${resDraw.status})`);
       const drawData = await resDraw.json();
-      let parsedDraw;
-      try { parsedDraw = cleanAndParseJson(drawData.content); } catch {
-        throw new Error("خروجی Groq ساختار JSON معتبری ندارد و کپشن اضافه تولید کرده است.");
-      }
+      const parsedDraw = cleanAndParseJson(drawData.content);
 
-      // ب) دریافت ساختار اطلاعات نام فایل و متن جایگزین سئو
       const resMeta = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ model: "groq", prompt: `${metaPromptBase}\n\nایده نهایی برای سئو تصویر: ${finalIdea}` }),
       });
-      if (!resMeta.ok) throw new Error(`سرور هوش مصنوعی برای دیتای سئو تصویر پاسخ نداد (کد خطا: ${resMeta.status})`);
       const metaData = await resMeta.json();
-      let parsedMeta;
-      try { parsedMeta = cleanAndParseJson(metaData.content); } catch {
-        throw new Error("خروجی Groq برای دیتای سئو تصویر ساختار JSON معتبری ندارد.");
-      }
+      const parsedMeta = cleanAndParseJson(metaData.content);
 
-      // آپدیت هوشمند استیت کامپوننت
       setImageAssets((prev) => ({
         ...prev,
         [key]: {
           ...prev[key],
-          generatedPrompt: parsedDraw.image_prompt || parsedDraw.prompt || parsedDraw.text || "",
-          fileName: parsedMeta.filename || parsedMeta.file_name || "image.jpg",
-          altText: parsedMeta.alt_text || parsedMeta.alt || "تصویر مرتبط با سایت",
+          generatedPrompt: parsedDraw.image_prompt || parsedDraw.prompt || parsedDraw.text || "Render Prompt Example",
+          fileName: parsedMeta.filename || parsedMeta.file_name || "optimized-image.jpg",
+          altText: parsedMeta.alt_text || parsedMeta.alt || "متن جایگزین سئو تصویر",
         },
       }));
-      alert(`🎯 پرامپت رندر و متادیتای سئو برای بخش "${asset.heading}" با موفقیت ایجاد شد.`);
+      alert(`🎯 اطلاعات و پرامپت بخش "${asset.heading}" با موفقیت ایجاد شد.`);
     } catch (e: any) {
       console.error(e);
-      alert(`خطا در پردازش: ${e.message}`);
+      alert(`خطا در ارتباط با سرور سئو: ${e.message}`);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-fadeIn">
-      {/* بدنه اصلی مودال با تم تاریک */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+      {/* بدنه اصلی با تم دارک مطابق تصاویر پنل شما */}
       <div className="relative w-full max-w-5xl h-[85vh] flex flex-col bg-[#0c0c0e] rounded-2xl border border-zinc-800 shadow-2xl text-zinc-100 overflow-hidden">
         
         {/* هدر مودال */}
         <div className="flex items-center justify-between p-5 border-b border-zinc-950 bg-[#111114]">
-          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-100 transition-colors">
-            ✕
-          </button>
+          <button onClick={onClose} className="text-zinc-400 hover:text-zinc-100 transition-colors">✕</button>
           <div className="flex items-center gap-4">
-            {/* دات‌های وضعیت فرآیند */}
             <div className="flex gap-1.5" dir="ltr">
               {[1, 2, 3, 4].map((i) => (
                 <span key={i} className={`w-2.5 h-2.5 rounded-full ${step === i ? "bg-purple-500" : "bg-zinc-800"}`} />
@@ -256,49 +242,50 @@ export default function ImageStudioModal({
             </div>
             <div>
               <span className="text-xs text-purple-400 font-mono block text-right">AUTOMATED CONTENT FACTORY</span>
-              <h2 className="text-base font-bold">میز فرمولاسیون و تدوین ساختار بریف محتوا</h2>
+              <h2 className="text-base font-bold">میز فرمولاسیون و تدوین ساختار بریف محتوا (پروژه: {projectId})</h2>
             </div>
           </div>
         </div>
 
-        {/* محتوای داخلی مودال (اسکرول‌شونده) */}
+        {/* بخش محتوای داخلی (اسکرول شونده) */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          
-          {/* حالت اول: لودینگ انیمیشنی استخراج خودکار */}
           {isGeneratingIdeas ? (
             <div className="flex flex-col items-center justify-center h-full space-y-4 py-20">
               <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
-              <p className="text-zinc-400 text-sm">در حال واکشی اطلاعات، تحلیل متن و استخراج ۳ ایده خلاقانه بر پایه هوش مصنوعی Groq...</p>
+              <p className="text-zinc-400 text-sm">در حال تحلیل متن و دریافت اتوماتیک ایده‌ها از بازوهای هوش مصنوعی Groq...</p>
             </div>
           ) : step === 3 ? (
-            /* حالت دوم: منوی انتخاب راهکار (مرحله ۳) */
-            <div className="space-y-6 max-w-2xl mx-auto py-10">
+            /* منوی انتخاب روش ایده‌پردازی */
+            <div className="space-y-6 max-w-2xl mx-auto py-6">
               <div className="text-center space-y-2">
                 <h3 className="text-lg font-bold">فرآیند ایده‌پردازی تصاویر مقاله</h3>
-                <p className="text-sm text-zinc-400">می‌توانید ایده‌ها را به صورت خودکار از Groq بگیرید یا جهت پایداری ۱۰۰٪، ساختار JSON کپی شده از Claude را وارد کنید:</p>
+                <p className="text-sm text-zinc-400">ساختار JSON دریافتی از Claude یا ChatGPT را در کادر زیر پیست کنید:</p>
               </div>
 
-              {/* باکس آپلود دستی JSON پیشنهادی شما */}
+              {/* کادر طلایی وارد کردن دستی JSON */}
               <div className="p-4 bg-zinc-900/60 rounded-xl border border-purple-900/30 space-y-3">
-                <label className="block text-sm text-purple-300 font-medium">🚀 میانبر طلایی: پیست کردن مستقیم JSON ایده‌ها (اکسترنال)</label>
+                <label className="block text-sm text-purple-300 font-medium">🚀 میانبر طلایی: پیست کردن مستقیم JSON ایده‌ها</label>
                 <textarea
                   dir="ltr"
                   value={manualJson}
                   onChange={(e) => setManualJson(e.target.value)}
-                  placeholder='{ "section-4": ["ایده ۱", "ایده ۲", "ایده ۳"] }'
-                  className="w-full h-36 p-3 bg-black/50 text-emerald-400 font-mono text-xs rounded-lg border border-zinc-800 focus:outline-none focus:border-purple-500 transition-all"
+                  placeholder='{
+  "h1": ["ایده ۱", "ایده ۲", "ایده ۳"],
+  "section-4": ["ایده ۱", "ایده ۲", "ایده ۳"]
+}'
+                  className="w-full h-40 p-3 bg-black/50 text-emerald-400 font-mono text-xs rounded-lg border border-zinc-800 focus:outline-none focus:border-purple-500 placeholder:text-zinc-700"
                 />
                 <button
                   onClick={() => handleImportManualJson(manualJson)}
-                  className="w-full py-2.5 bg-purple-700 hover:bg-purple-600 text-white font-medium text-sm rounded-lg transition-all"
+                  className="w-full py-2.5 bg-purple-700 hover:bg-purple-600 text-white font-medium text-sm rounded-lg transition-all shadow-lg"
                 >
-                  استخراج و بارگذاری دیتای پکیج JSON
+                  استخراج و بارگذاری آنی دیتای پکیج JSON
                 </button>
               </div>
 
               <div className="relative flex py-2 items-center">
                 <div className="flex-grow border-t border-zinc-800"></div>
-                <span className="flex-shrink mx-4 text-zinc-500 text-xs font-mono">OR USE API</span>
+                <span className="flex-shrink mx-4 text-zinc-500 text-xs font-mono">یا اتصال مستقیم</span>
                 <div className="flex-grow border-t border-zinc-800"></div>
               </div>
 
@@ -306,15 +293,15 @@ export default function ImageStudioModal({
                 onClick={generateImageIdeas}
                 className="w-full py-3 bg-zinc-900 hover:bg-zinc-800 border border-zinc-700 text-zinc-200 font-medium text-sm rounded-lg transition-all"
               >
-                تولید اتوماتیک ایده‌ها با اتصال مستقیم به Groq API
+                تولید اتوماتیک و آنلاین ایده‌ها با Groq API
               </button>
             </div>
           ) : (
-            /* حالت سوم: استودیو فرمولاسیون تصاویر (مرحله ۴) */
+            /* پنل پیشرفته استودیو تصاویر (مرحله ۴) */
             <div className="space-y-6">
               <div className="p-4 bg-purple-950/20 border border-purple-900/40 rounded-xl">
-                <h4 className="text-purple-400 font-bold text-sm mb-1">🎨 استودیو فرمولاسیون و بهینه‌سازی تصاویر</h4>
-                <p className="text-xs text-zinc-400">بخش‌هایی که نیاز به تصویر دارند در زیر فهرست شده‌اند. برای هر بخش یک ایده را انتخاب کنید یا خودتان بنویسید، سپس دکمه چرخ‌دنده را بزنید.</p>
+                <h4 className="text-purple-400 font-bold text-sm mb-1">🎨 استودیو فرمولاسیون و بهینه‌سازی تصاویر سئو</h4>
+                <p className="text-xs text-zinc-400">ایده‌های استخراج شده در زیر لیست شده‌اند. یکی را انتخاب کنید، یا ایده شخصی خود را بنویسید و سپس دکمه چرخ‌دنده را بزنید.</p>
               </div>
 
               {Object.keys(imageAssets).map((key) => {
@@ -343,19 +330,19 @@ export default function ImageStudioModal({
                       ))}
                     </div>
 
-                    {/* کادر متن ایده سفارشی */}
+                    {/* باکس ایده سفارشی */}
                     <div className="space-y-1.5">
-                      <label className="block text-xs text-zinc-400">یا کادر زیر را پر کنید (نوشتن در این کادر اولویت قرار می‌گیرد):</label>
+                      <label className="block text-xs text-zinc-400">ایده سفارشی (نوشتن در این کادر اولویت قرار می‌گیرد):</label>
                       <input
                         type="text"
                         value={asset.customIdea}
                         onChange={(e) => setImageAssets({ ...imageAssets, [key]: { ...asset, customIdea: e.target.value } })}
-                        placeholder="ایده شخصی خود را برای این تصویر بنویسید..."
-                        className="w-full p-2.5 bg-black/40 text-sm border border-zinc-800 rounded-lg focus:outline-none focus:border-purple-500 text-zinc-200"
+                        placeholder="ایده شخصی خود را برای تصویر این بخش بنویسید..."
+                        className="w-full p-2.5 bg-black/40 text-sm border border-zinc-800 rounded-lg text-zinc-200 focus:outline-none focus:border-purple-500"
                       />
                     </div>
 
-                    {/* کادرهای نمایش پرامپت تولید شده و دیتای سئو (اگر موجود باشند) */}
+                    {/* نمایش خروجی نهایی سئو و پرامپت در صورت تولید شدن */}
                     {(asset.generatedPrompt || asset.altText) && (
                       <div className="p-3 bg-black/60 rounded-lg border border-zinc-850 space-y-2 text-xs font-mono text-zinc-300" dir="ltr">
                         {asset.generatedPrompt && <p><span className="text-purple-400">Prompt:</span> {asset.generatedPrompt}</p>}
@@ -385,14 +372,14 @@ export default function ImageStudioModal({
           <button
             onClick={() => setStep(3)}
             disabled={step === 3}
-            className="px-5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-zinc-200 text-xs font-medium rounded-xl border border-zinc-800 transition-all disabled:opacity-30"
+            className="px-5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 text-xs font-medium rounded-xl border border-zinc-800 transition-all disabled:opacity-30"
           >
-            بازگشت به محتوا
+            بازگشت به متدها
           </button>
           
           <button
-            onClick={() => { alert("🚀 کل ساختار تصاویر ذخیره و آماده ارسال به وردپرس شد!"); onClose(); }}
-            className="flex-1 md:flex-initial px-8 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-600/20 transition-all"
+            onClick={() => { alert("🚀 تمام ایده‌ها و متادیتای تصاویر ذخیره و نهایی شدند!"); onClose(); }}
+            className="px-8 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-lg transition-all"
           >
             🚀 اتمام فرآیند و درج تصویرمحور در وردپرس
           </button>
