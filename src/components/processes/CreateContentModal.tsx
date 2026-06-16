@@ -1,31 +1,42 @@
 "use client";
 
 import { useState } from "react";
-// وارد کردن اینترفیس‌ها از پوشه lib
-import { ArticleData, ImageIdeaSet } from "@/lib/types"; 
-// وارد کردن تابع منطقی از پوشه lib
+import { ArticleData, ImageIdeaSet, Prompt } from "@/lib/types"; 
 import { handleFinalPublish } from "@/lib/articleActions"; 
-
-// وارد کردن کامپوننت‌های مراحل از پوشه components/steps
-import Step1 from "@/components/steps/Step1";
-import Step2 from "@/components/steps/Step2";
-import Step3 from "@/components/steps/Step3";
-import Step4 from "@/components/steps/Step4";
+import Step1 from "./steps/Step1";
+import Step2 from "./steps/Step2";
+import Step3 from "./steps/Step3";
+import Step4 from "./steps/Step4";
 
 export default function CreateContentModal({ projectId, onClose }: { projectId: number, onClose: () => void }) {
-  // ۱. مدیریت وضعیت مرحله فعلی (اینجا می‌ماند چون همه مراحل به آن نیاز دارند)
   const [step, setStep] = useState(1);
   
-  // ۲. مدیریت داده‌های اصلی (اینجا می‌ماند چون قلب تپنده پروژه است)
-  const [articleData, setArticleData] = useState<ArticleData>(/* مقدار اولیه */);
+  // States برای کل فرم
+  const [articleData, setArticleData] = useState<ArticleData>({
+    meta_title: "", meta_description: "", focus_keyword: "", slug: "", h1: "", 
+    intro: "", sections: [], faq: [], conclusion: "", cta: { text: "", anchor_text: "", target_url: "" }
+  });
   const [imageAssets, setImageAssets] = useState<ImageIdeaSet[]>([]);
   const [publishing, setPublishing] = useState(false);
+  
+  // States مخصوص مرحله ۱
+  const [topic, setTopic] = useState("");
+  const [targetPage, setTargetPage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [prompts, setPrompts] = useState<Prompt[]>([]); 
+  const [pIds, setPIds] = useState({ gen: "", rev: "", idea: "", draw: "", meta: "" });
 
   return (
     <div className="modal-container">
-      {/* اینجا فقط منطق سوییچ کردن مراحل است */}
-      
-      {step === 1 && <Step1 data={articleData} setData={setArticleData} onNext={() => setStep(2)} />}
+      {step === 1 && (
+        <Step1 
+          topic={topic} setTopic={setTopic}
+          targetPage={targetPage} setTargetPage={setTargetPage}
+          loading={loading} prompts={prompts}
+          pIds={pIds} setPIds={setPIds}
+          onNext={() => setStep(2)}
+        />
+      )}
       
       {step === 2 && <Step2 data={articleData} setData={setArticleData} onNext={() => setStep(3)} onBack={() => setStep(1)} />}
       
@@ -37,7 +48,6 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
           articleData={articleData} 
           publishing={publishing}
           onBack={() => setStep(3)}
-          // تابع انتشار را از lib/articleActions فراخوانی می‌کنیم
           onPublish={() => handleFinalPublish(articleData, imageAssets, setPublishing, console.log)} 
         />
       )}
