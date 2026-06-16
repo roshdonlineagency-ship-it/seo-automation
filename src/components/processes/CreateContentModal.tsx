@@ -286,14 +286,15 @@ export default function CreateContentModal({ projectId, onClose }: Props) {
                       بازگشت
                     </button>
                     
-                      href={imageUrl}
-                      download="image.webp"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="bg-white/5 border border-white/10 px-6 py-3 rounded-xl text-sm hover:bg-white/10 transition-colors"
-                    >
-                      ⬇️ دانلود
-                    </a>
+                    href={imageUrl}
+  download="image.webp"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="bg-white/5 border border-white/10 px-6 py-3 rounded-xl text-sm hover:bg-white/10 transition-colors"
+  onClick={(e) => e.stopPropagation()}
+>
+  دانلود
+</a>
                     <button onClick={onClose} className="flex-1 bg-violet-600 hover:bg-violet-500 px-6 py-3 rounded-xl text-sm font-medium transition-colors">
                       تایید و بستن ✓
                     </button>
