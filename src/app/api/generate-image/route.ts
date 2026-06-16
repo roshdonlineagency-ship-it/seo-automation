@@ -6,13 +6,13 @@ export async function POST(req: Request) {
     if (!prompt) return NextResponse.json({ error: 'پرامپت الزامی است' }, { status: 400 });
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{
-            parts: [{ text: `Generate an image for this topic: ${prompt}` }]
+            parts: [{ text: prompt }]
           }],
           generationConfig: {
             responseModalities: ["IMAGE", "TEXT"],
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     const imagePart = parts?.find((p: any) => p.inlineData);
 
     if (!imagePart?.inlineData?.data) {
-      return NextResponse.json({ error: 'تصویر دریافت نشد: ' + JSON.stringify(data) }, { status: 500 });
+      return NextResponse.json({ error: 'تصویر دریافت نشد' }, { status: 500 });
     }
 
     const mimeType = imagePart.inlineData.mimeType || 'image/png';
