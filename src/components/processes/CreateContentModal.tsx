@@ -81,7 +81,8 @@ export default function CreateContentModal({ projectId, onClose }: Props) {
       if (Array.isArray(data)) setPrompts(data);
     } catch (error) {
       console.error(error);
-    } bits {
+    } // اصلاح خطای تایپی قبلی
+    finally {
       setLoading(false);
     }
   }
@@ -249,7 +250,8 @@ ${JSON.stringify(reviewReport, null, 2)}
       }
     } catch (error) {
       console.error(error);
-    } bits {
+    } // اصلاح خطای تایپی قبلی
+    finally {
       setPublishing(false);
     }
   };
