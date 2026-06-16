@@ -45,13 +45,74 @@ interface Props {
   onClose: () => void;
 }
 
+// 🟢 تایپ مربوط به پراپ‌های کامپوننت کامنت‌گذاری خارج از بدنه
+interface RenderEditableBlockProps {
+  label: string;
+  fieldKey: string;
+  value: string;
+  approvedFields: Record<string, boolean>;
+  setApprovedFields: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  corrections: Record<string, string>;
+  setCorrections: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  extraElement?: React.ReactNode;
+}
+
+// 🟢 کامپوننت کمکی به خارج از کامپوننت اصلی منتقل شد تا فوکوس کیبورد از بین نرود
+const RenderEditableBlock = ({ 
+  label, 
+  fieldKey, 
+  value,
+  approvedFields,
+  setApprovedFields,
+  corrections,
+  setCorrections,
+  extraElement
+}: RenderEditableBlockProps) => (
+  <div className={`p-5 rounded-2xl border transition-colors ${approvedFields[fieldKey] ? "bg-emerald-500/5 border-emerald-500/30" : "bg-white/5 border-white/10"}`}>
+    <div className="flex items-center justify-between mb-3">
+      <span className="text-violet-400 font-medium text-xs bg-violet-500/10 px-3 py-1 rounded-full">{label}</span>
+      <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-white/60">
+        <input 
+          type="checkbox" 
+          checked={!!approvedFields[fieldKey]} 
+          onChange={(e) => {
+            setApprovedFields(prev => ({ ...prev, [fieldKey]: e.target.checked }));
+            if(e.target.checked) {
+              setCorrections(prev => { const updated = {...prev}; delete updated[fieldKey]; return updated; });
+            }
+          }}
+          className="rounded border-white/20 text-violet-600 focus:ring-violet-500 bg-transparent w-4 h-4"
+        />
+        تایید این بخش
+      </label>
+    </div>
+
+    <div className="text-sm text-white/90 leading-7 whitespace-pre-wrap mb-4 bg-black/20 p-3 rounded-xl border border-white/5">
+      {value}
+    </div>
+
+    {extraElement && <div className="mb-4">{extraElement}</div>}
+
+    {!approvedFields[fieldKey] && (
+      <div className="mt-3">
+        <input
+          type="text"
+          value={corrections[fieldKey] || ""}
+          onChange={(e) => setCorrections(prev => ({ ...prev, [fieldKey]: e.target.value }))}
+          placeholder="یادداشت اصلاحی برای این بخش..."
+          className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-white/20 focus:outline-none focus:border-violet-500 transition-colors"
+        />
+      </div>
+    )}
+  </div>
+);
+
 export default function CreateContentModal({ projectId, onClose }: Props) {
   const [step, setStep] = useState(1);
   const [topic, setTopic] = useState("");
   const [targetPage, setTargetPage] = useState("");
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   
-  // استیت انتخاب دو پرامپت مجزا
   const [selectedGenPromptId, setSelectedGenPromptId] = useState("");
   const [selectedRevPromptId, setSelectedRevPromptId] = useState("");
   
@@ -59,13 +120,11 @@ export default function CreateContentModal({ projectId, onClose }: Props) {
   const [publishing, setPublishing] = useState(false);
   const [published, setPublished] = useState<string>("");
 
-  // استیت‌های مدیریت محتوای متنی پیست شده و تولید شده
   const [pastedJson, setPastedJson] = useState("");
   const [correctionPastedJson, setCorrectionPastedJson] = useState("");
   const [compiledCorrectionPrompt, setCompiledCorrectionPrompt] = useState("");
   const [isWaitingForCorrection, setIsWaitingForCorrection] = useState(false);
 
-  // --- استیت‌های مدیریت ساختار بریف ---
   const [articleData, setArticleData] = useState<ArticleData | null>(null);
   const [approvedFields, setApprovedFields] = useState<Record<string, boolean>>({});
   const [corrections, setCorrections] = useState<Record<string, string>>({});
@@ -90,7 +149,6 @@ export default function CreateContentModal({ projectId, onClose }: Props) {
     }
   }
 
-  // تمیزکننده بلاک‌های کد مارک‌داون
   const cleanAndParseJson = (rawContent: string) => {
     let clean = rawContent.trim();
     if (clean.includes("```json")) {
@@ -101,14 +159,12 @@ export default function CreateContentModal({ projectId, onClose }: Props) {
     return JSON.parse(clean);
   };
 
-  // مرحله ۱: ادغام اطلاعات با پرامپت تولید اولیه
   const getFinalGenerationPrompt = () => {
     const genPrompt = prompts.find((p) => p.id === Number(selectedGenPromptId));
     if (!genPrompt) return "";
     return `${genPrompt.text}\n\nموضوع مقاله:\n${topic}\n\nصفحه هدف برای لینک سازی:\n${targetPage}\n\nنکته فوق حیاتی: خروجی تو باید "فقط و فقط" یک فرمت JSON معتبر و منطبق بر ساختار خواسته شده باشد. هیچ کلام، تگ یا توضیحی خارج از آبجکت اصلی JSON ارسال نکن.`;
   };
 
-  // پردازش جیسان اولیه وارد شده توسط کاربر
   const handleParseInitialJson = () => {
     setJsonError(null);
     try {
@@ -128,7 +184,6 @@ export default function CreateContentModal({ projectId, onClose }: Props) {
     }
   };
 
-  // مرحله ۳: ساخت پرامپت اصلاحیه برای کپی دستی کاربر
   const handleGenerateCorrectionPrompt = () => {
     if (!articleData) return;
     const revPrompt = prompts.find((p) => p.id === Number(selectedRevPromptId));
@@ -170,7 +225,6 @@ ${JSON.stringify(reviewReport, null, 2)}
     setIsWaitingForCorrection(true);
   };
 
-  // اعمال جیسان اصلاح شده دستی کاربر
   const handleApplyCorrectionJson = () => {
     setJsonError(null);
     try {
@@ -186,7 +240,6 @@ ${JSON.stringify(reviewReport, null, 2)}
     }
   };
 
-  // تبدیل دیتای نهایی به HTML
   const convertJsonToHtml = (data: ArticleData) => {
     let html = `<p><strong>کلمه کلیدی تمرکزی:</strong> ${data.focus_keyword}</p>`;
     html += `<p>${data.intro}</p>`;
@@ -237,58 +290,6 @@ ${JSON.stringify(reviewReport, null, 2)}
       setPublishing(false);
     }
   };
-
-  // کامپوننت کمکی داخلی اصلاح شده با تایپ اختیاری extraElement
-  const RenderEditableBlock = ({ 
-    label, 
-    fieldKey, 
-    value,
-    extraElement
-  }: { 
-    label: string, 
-    fieldKey: string, 
-    value: string,
-    extraElement?: React.ReactNode
-  }) => (
-    <div className={`p-5 rounded-2xl border transition-colors ${approvedFields[fieldKey] ? "bg-emerald-500/5 border-emerald-500/30" : "bg-white/5 border-white/10"}`}>
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-violet-400 font-medium text-xs bg-violet-500/10 px-3 py-1 rounded-full">{label}</span>
-        <label className="flex items-center gap-2 cursor-pointer select-none text-xs text-white/60">
-          <input 
-            type="checkbox" 
-            checked={!!approvedFields[fieldKey]} 
-            onChange={(e) => {
-              setApprovedFields(prev => ({ ...prev, [fieldKey]: e.target.checked }));
-              if(e.target.checked) {
-                setCorrections(prev => { const updated = {...prev}; delete updated[fieldKey]; return updated; });
-              }
-            }}
-            className="rounded border-white/20 text-violet-600 focus:ring-violet-500 bg-transparent w-4 h-4"
-          />
-          تایید این بخش
-        </label>
-      </div>
-
-      <div className="text-sm text-white/90 leading-7 whitespace-pre-wrap mb-4 bg-black/20 p-3 rounded-xl border border-white/5">
-        {value}
-      </div>
-
-      {/* نمایش المان تصویر یا موارد اضافه در صورت وجود */}
-      {extraElement && <div className="mb-4">{extraElement}</div>}
-
-      {!approvedFields[fieldKey] && (
-        <div className="mt-3">
-          <input
-            type="text"
-            value={corrections[fieldKey] || ""}
-            onChange={(e) => setCorrections(prev => ({ ...prev, [fieldKey]: e.target.value }))}
-            placeholder="یادداشت اصلاحی برای این بخش..."
-            className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-white/20 focus:outline-none focus:border-violet-500 transition-colors"
-          />
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-5" dir="rtl">
@@ -421,8 +422,86 @@ ${JSON.stringify(reviewReport, null, 2)}
           {step === 3 && articleData && (
             <div className="space-y-6">
 
+              {jsonError && <p className="text-red-400 text-xs bg-red-500/10 p-3 rounded-xl border border-red-500/20">{jsonError}</p>}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <RenderEditableBlock label="متا تایتل (SEO)" fieldKey="meta_title" value={articleData.meta_title} approvedFields={approvedFields} setApprovedFields={setApprovedFields} corrections={corrections} setCorrections={setCorrections} />
+                <RenderEditableBlock label="متا دیسکریپشن" fieldKey="meta_description" value={articleData.meta_description} approvedFields={approvedFields} setApprovedFields={setApprovedFields} corrections={corrections} setCorrections={setCorrections} />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <RenderEditableBlock label="کلمه کلیدی هدف" fieldKey="focus_keyword" value={articleData.focus_keyword} approvedFields={approvedFields} setApprovedFields={setApprovedFields} corrections={corrections} setCorrections={setCorrections} />
+                <RenderEditableBlock label="اسلاگ URL (Slug)" fieldKey="slug" value={articleData.slug} approvedFields={approvedFields} setApprovedFields={setApprovedFields} corrections={corrections} setCorrections={setCorrections} />
+              </div>
+
+              <RenderEditableBlock label="هدینگ اصلی (H1)" fieldKey="h1" value={articleData.h1} approvedFields={approvedFields} setApprovedFields={setApprovedFields} corrections={corrections} setCorrections={setCorrections} />
+              <RenderEditableBlock label="مقدمه مقاله (Intro)" fieldKey="intro" value={articleData.intro} approvedFields={approvedFields} setApprovedFields={setApprovedFields} corrections={corrections} setCorrections={setCorrections} />
+
+              <div className="space-y-4">
+                <p className="text-white/40 text-xs border-r-2 border-violet-500 pr-2">پیکربندی سرفصل‌ها و موقعیت تصاویر</p>
+                {articleData.sections?.map((sec) => (
+                  <RenderEditableBlock 
+                    key={sec.id}
+                    label={`هدینگ دوم: ${sec.h2}`} 
+                    fieldKey={sec.id} 
+                    value={sec.content}
+                    approvedFields={approvedFields}
+                    setApprovedFields={setApprovedFields}
+                    corrections={corrections}
+                    setCorrections={setCorrections}
+                    extraElement={
+                      <div className="bg-white/5 p-3 rounded-xl border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                        <div className="text-white/60">
+                          <span className="text-violet-400 font-semibold">ایده تصویر:</span> {sec.image_suggestion} 
+                          <span className="mr-2 px-2 py-0.5 rounded bg-white/10 text-white/40">اولویت: {sec.image_priority}</span>
+                        </div>
+                        <label className="flex items-center gap-2 cursor-pointer select-none text-white/80 shrink-0">
+                          <input 
+                            type="checkbox"
+                            checked={!!userWantsImage[sec.id]}
+                            onChange={(e) => setUserWantsImage(prev => ({ ...prev, [sec.id]: e.target.checked }))}
+                            className="rounded border-white/20 text-violet-600 focus:ring-violet-500 bg-transparent w-4 h-4"
+                          />
+                          تایید درج تصویر در این بخش
+                        </label>
+                      </div>
+                    }
+                  />
+                ))}
+              </div>
+
+              {articleData.faq && articleData.faq.length > 0 && (
+                <div className="space-y-4">
+                  <p className="text-white/40 text-xs border-r-2 border-violet-500 pr-2">سوالات متداول (FAQ)</p>
+                  {articleData.faq.map((item, index) => (
+                    <RenderEditableBlock 
+                      key={index}
+                      label={`سوال متداول ${index + 1}`} 
+                      fieldKey={`faq_${index}`} 
+                      value={`پرسش: ${item.question}\nپاسخ: ${item.answer}`} 
+                      approvedFields={approvedFields}
+                      setApprovedFields={setApprovedFields}
+                      corrections={corrections}
+                      setCorrections={setCorrections}
+                    />
+                  ))}
+                </div>
+              )}
+
+              <RenderEditableBlock label="نتیجه‌گیری مقاله" fieldKey="conclusion" value={articleData.conclusion} approvedFields={approvedFields} setApprovedFields={setApprovedFields} corrections={corrections} setCorrections={setCorrections} />
+              
+              {articleData.cta && (
+                <div className="bg-white/5 p-4 rounded-xl border border-white/10 text-xs space-y-2">
+                  <p className="text-violet-400 font-medium">پک دعوت به اقدام (CTA)</p>
+                  <p className="text-white/80"><span className="text-white/40">متن نمایش:</span> {articleData.cta.text}</p>
+                  <p className="text-white/80"><span className="text-white/40">انکرتکست:</span> {articleData.cta.anchor_text}</p>
+                  <p className="text-white/40 truncate"><span className="text-white/40">لینک هدف:</span> {articleData.cta.target_url}</p>
+                </div>
+              )}
+
+              {/* 🟢 باکس زرد رنگ پرامپت اصلاحیه مستقل و بدون پرش فوکوس (دقیقاً بالای دکمه‌های عملیاتی) */}
               {isWaitingForCorrection && (
-                <div className="bg-amber-500/10 border border-amber-500/30 p-5 rounded-2xl space-y-4">
+                <div className="bg-amber-500/10 border border-amber-500/30 p-5 rounded-2xl space-y-4 my-6">
                   <div className="flex justify-between items-center">
                     <p className="text-amber-400 text-xs font-semibold">🛠️ پرامپت اصلاحیه ساخته شد! کپی کنید و به هوش مصنوعی تحویل دهید:</p>
                     <button 
@@ -459,75 +538,6 @@ ${JSON.stringify(reviewReport, null, 2)}
                       🔄 بروزرسانی میز تحریریه
                     </button>
                   </div>
-                </div>
-              )}
-
-              {jsonError && <p className="text-red-400 text-xs bg-red-500/10 p-3 rounded-xl border border-red-500/20">{jsonError}</p>}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <RenderEditableBlock label="متا تایتل (SEO)" fieldKey="meta_title" value={articleData.meta_title} />
-                <RenderEditableBlock label="متا دیسکریپشن" fieldKey="meta_description" value={articleData.meta_description} />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <RenderEditableBlock label="کلمه کلیدی هدف" fieldKey="focus_keyword" value={articleData.focus_keyword} />
-                <RenderEditableBlock label="اسلاگ URL (Slug)" fieldKey="slug" value={articleData.slug} />
-              </div>
-
-              <RenderEditableBlock label="هدینگ اصلی (H1)" fieldKey="h1" value={articleData.h1} />
-              <RenderEditableBlock label="مقدمه مقاله (Intro)" fieldKey="intro" value={articleData.intro} />
-
-              <div className="space-y-4">
-                <p className="text-white/40 text-xs border-r-2 border-violet-500 pr-2">پیکربندی سرفصل‌ها و موقعیت تصاویر</p>
-                {articleData.sections?.map((sec) => (
-                  <RenderEditableBlock 
-                    key={sec.id}
-                    label={`هدینگ دوم: ${sec.h2}`} 
-                    fieldKey={sec.id} 
-                    value={sec.content}
-                    extraElement={
-                      <div className="bg-white/5 p-3 rounded-xl border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                        <div className="text-white/60">
-                          <span className="text-violet-400 font-semibold">ایده تصویر:</span> {sec.image_suggestion} 
-                          <span className="mr-2 px-2 py-0.5 rounded bg-white/10 text-white/40">اولویت: {sec.image_priority}</span>
-                        </div>
-                        <label className="flex items-center gap-2 cursor-pointer select-none text-white/80 shrink-0">
-                          <input 
-                            type="checkbox"
-                            checked={!!userWantsImage[sec.id]}
-                            onChange={(e) => setUserWantsImage(prev => ({ ...prev, [sec.id]: e.target.checked }))}
-                            className="rounded border-white/20 text-violet-600 focus:ring-violet-500 bg-transparent w-4 h-4"
-                          />
-                          تایید درج تصویر در این بخش
-                        </label>
-                      </div>
-                    }
-                  />
-                ))}
-              </div>
-
-              {articleData.faq && articleData.faq.length > 0 && (
-                <div className="space-y-4">
-                  <p className="text-white/40 text-xs border-r-2 border-violet-500 pr-2">سوالات متداول (FAQ)</p>
-                  {articleData.faq.map((item, index) => (
-                    <RenderEditableBlock 
-                      key={index}
-                      label={`سوال متداول ${index + 1}`} 
-                      fieldKey={`faq_${index}`} 
-                      value={`پرسش: ${item.question}\nپاسخ: ${item.answer}`} 
-                    />
-                  ))}
-                </div>
-              )}
-
-              <RenderEditableBlock label="نتیجه‌گیری مقاله" fieldKey="conclusion" value={articleData.conclusion} />
-              
-              {articleData.cta && (
-                <div className="bg-white/5 p-4 rounded-xl border border-white/10 text-xs space-y-2">
-                  <p className="text-violet-400 font-medium">پک دعوت به اقدام (CTA)</p>
-                  <p className="text-white/80"><span className="text-white/40">متن نمایش:</span> {articleData.cta.text}</p>
-                  <p className="text-white/80"><span className="text-white/40">انکرتکست:</span> {articleData.cta.anchor_text}</p>
-                  <p className="text-white/40 truncate"><span className="text-white/40">لینک هدف:</span> {articleData.cta.target_url}</p>
                 </div>
               )}
 
