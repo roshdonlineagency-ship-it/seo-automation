@@ -232,56 +232,83 @@ ${JSON.stringify(reviewReport, null, 2)}
   };
 
   // --- ۵. توابع پیشرفته مدیریت و هوشمندسازی فرآیند تصاویر (مرحله ۴) ---
-  
+// مرحله ۴: تولید ۳ ایده تصویر با Groq (نسخه بهینه، همزمان و ضد قفل)
   const generateImageIdeas = async () => {
     setStep(4);
     setIsGeneratingIdeas(true);
-    const ideaPrompt = prompts.find(p => p.id === Number(pIds.idea))?.text;
-    const newAssets: Record<string, ImageIdeaSet> = {};
-
-    for (const key of Object.keys(userWantsImage)) {
-      if (!userWantsImage[key]) continue;
+    
+    try {
+      const ideaPrompt = prompts.find(p => p.id === Number(pIds.idea))?.text;
+      const newAssets: Record<string, ImageIdeaSet> = {};
       
-      let heading = "";
-      let content = "";
+      // فیلتر کردن سکشن‌هایی که تیک نیاز به تصویر دارند
+      const activeKeys = Object.keys(userWantsImage).filter(key => userWantsImage[key]);
+      
+      // اجرای همزمان تمام درخواست‌ها برای سرعت فوق‌العاده و جلوگیری از معطلی
+      await Promise.all(
+        activeKeys.map(async (key) => {
+          let heading = "";
+          let content = "";
 
-      if (key === "h1") { heading = "تیتر اصلی مقاله (H1)"; content = articleData?.h1 || ""; }
-      else if (key === "intro") { heading = "مقدمه مقاله"; content = articleData?.intro || ""; }
-      else if (key === "conclusion") { heading = "نتیجه‌گیری انتها"; content = articleData?.conclusion || ""; }
-      else {
-        const sec = articleData?.sections.find(s => s.id === key);
-        if (sec) { heading = `سکشن: ${sec.h2}`; content = sec.content; }
-      }
+          if (key === "h1") { heading = "تیتر اصلی مقاله (H1)"; content = articleData?.h1 || ""; }
+          else if (key === "intro") { heading = "مقدمه مقاله"; content = articleData?.intro || ""; }
+          else if (key === "conclusion") { heading = "نتیجه‌گیری انتها"; content = articleData?.conclusion || ""; }
+          else {
+            const sec = articleData?.sections.find(s => s.id === key);
+            if (sec) { heading = `سکشن: ${sec.h2}`; content = sec.content; }
+          }
 
-      try {
-        const res = await fetch("/api/generate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
-            model: "groq", 
-            prompt: `${ideaPrompt}\n\nمحتوای متنی بخش مربوطه:\n${content}` 
-          })
-        });
-        const data = await res.json();
-        const parsedJson = cleanAndParseJson(data.content);
-        const ideas = parsedJson.ideas || ["خطا در دریافت ایده اول", "ایده دوم", "ایده سوم"];
+          try {
+            const res = await fetch("/api/generate", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ 
+                model: "groq", 
+                prompt: `${ideaPrompt}\n\nمحتوای متنی بخش مربوطه:\n${content}` 
+              })
+            });
+            
+            if (!res.ok) throw new Error(`API Status: ${res.status}`);
+            
+            const data = await res.json();
+            const parsedJson = cleanAndParseJson(data.content);
+            const ideas = parsedJson.ideas || ["خطا در دریافت ایده اول", "ایده دوم", "ایده سوم"];
 
-        newAssets[key] = { 
-          sectionId: key, 
-          heading,
-          ideas, 
-          selectedIdea: ideas[0] || "", 
-          customIdea: "", 
-          generatedPrompt: "", 
-          fileName: "", 
-          altText: "" 
-        };
-      } catch (e) { 
-        console.error("Error generating image ideas for key:", key, e); 
-      }
+            newAssets[key] = { 
+              sectionId: key, 
+              heading,
+              ideas, 
+              selectedIdea: ideas[0] || "", 
+              customIdea: "", 
+              generatedPrompt: "", 
+              fileName: "", 
+              altText: "" 
+            };
+          } catch (e) { 
+            console.error(`Error generating image ideas for key [${key}]:`, e); 
+            // فال‌بک امن برای اینکه لودر قفل نکند و سیستم به کارش ادامه دهد
+            newAssets[key] = { 
+              sectionId: key, 
+              heading,
+              ideas: ["امکان دریافت خودکار ایده فراهم نشد"], 
+              selectedIdea: "", 
+              customIdea: "", 
+              generatedPrompt: "", 
+              fileName: "image.jpg", 
+              altText: "تصویر مقاله" 
+            };
+          }
+        })
+      );
+
+      setImageAssets(newAssets);
+    } catch (globalError) {
+      console.error("Global error in generateImageIdeas:", globalError);
+      alert("خطایی در سیستم فرآیند ایده‌پردازی رخ داد.");
+    } finally {
+      // این بلوک تضمین می‌کند که انیمیشن لودینگ تحت هر شرایطی حتماً خاموش شود
+      setIsGeneratingIdeas(false);
     }
-    setImageAssets(newAssets);
-    setIsGeneratingIdeas(false);
   };
 
   const finalizeImageAssets = async (key: string) => {
