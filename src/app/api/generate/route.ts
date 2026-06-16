@@ -27,12 +27,22 @@ export async function POST(req: Request) {
       });
       content = completion.choices[0].message.content || '';
 
-    } else {
+    } else if (model === 'gemini') {
       const { GoogleGenerativeAI } = await import('@google/generative-ai');
       const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
       const geminiModel = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
       const result = await geminiModel.generateContent(prompt);
       content = result.response.text();
+
+    } else {
+      const Groq = (await import('groq-sdk')).default;
+      const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+      const completion = await groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
+        max_tokens: 4000,
+        messages: [{ role: 'user', content: prompt }],
+      });
+      content = completion.choices[0].message.content || '';
     }
 
     return NextResponse.json({ content });
