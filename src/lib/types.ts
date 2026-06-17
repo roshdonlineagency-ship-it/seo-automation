@@ -30,3 +30,10 @@ export interface ImageIdeaSet {
   altText: string;
   file?: File;
 }
+
+// 🟢 این همان تایپ گمشده است که اضافه شد تا ارور برای همیشه حل شود
+export interface Prompt {
+  id: string | number;
+  name: string;
+  content?: string;
+}
