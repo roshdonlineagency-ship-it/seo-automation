@@ -52,8 +52,20 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
 
   const handleParseInitialJson = () => {
     try {
-      const parsedData = JSON.parse(pastedJson);
+      const parsedData: ArticleData = JSON.parse(pastedJson);
       setArticleData(parsedData);
+
+      // ── initialize userWantsImage از روی needs_image هر سکشن ──
+      const imageToggles: Record<string, boolean> = {
+        h1: false,
+        intro: false,
+        conclusion: false,
+      };
+      parsedData.sections?.forEach((sec) => {
+        imageToggles[sec.id] = sec.needs_image ?? false;
+      });
+      setUserWantsImage(imageToggles);
+
       setStep(3);
     } catch (error) {
       alert("خطا: فرمت JSON نامعتبر است!");
@@ -70,8 +82,20 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
 
   const handleApplyCorrectionJson = () => {
     try {
-      const parsedData = JSON.parse(correctionPastedJson);
+      const parsedData: ArticleData = JSON.parse(correctionPastedJson);
       setArticleData(parsedData);
+
+      // ── بعد از اصلاحیه هم userWantsImage رو آپدیت کن ──
+      const imageToggles: Record<string, boolean> = {
+        h1: userWantsImage["h1"] ?? false,
+        intro: userWantsImage["intro"] ?? false,
+        conclusion: userWantsImage["conclusion"] ?? false,
+      };
+      parsedData.sections?.forEach((sec) => {
+        imageToggles[sec.id] = userWantsImage[sec.id] ?? sec.needs_image ?? false;
+      });
+      setUserWantsImage(imageToggles);
+
       alert("اصلاحات اعمال شد! 🚀");
       setIsWaitingForCorrection(false);
       setCorrectionPastedJson("");
@@ -144,7 +168,7 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
             seoPromptText={seoPromptText}
             seoJsonInput={seoJsonInput} setSeoJsonInput={setSeoJsonInput}
             handleParseSeoJson={() => console.log("Parsing SEO...")}
-            handleFinalPublish={() => handleFinalPublish(articleData, imageAssets, setPublishing, console.log)}
+            handleFinalPublish={() => handleFinalPublish(articleData, imageAssets, setPublishing, (link) => setPublished(link))}
             setStep={setStep}
           />
         )}
