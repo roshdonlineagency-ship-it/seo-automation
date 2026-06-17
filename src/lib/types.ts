@@ -31,9 +31,10 @@ export interface ImageIdeaSet {
   file?: File;
 }
 
-// 🟢 این همان تایپ گمشده است که اضافه شد تا ارور برای همیشه حل شود
 export interface Prompt {
-  id: string | number;
+  id: number | string;
+  project_id?: number | string;
   name: string;
-  content?: string;
+  text: string; // <-- این خط رو حتماً اضافه کن
+  // هر فیلد دیگه‌ای که داری...
 }
