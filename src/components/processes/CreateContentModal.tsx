@@ -10,22 +10,20 @@ import Step3 from "@/components/processes/steps/Step3";
 import Step4 from "@/components/processes/steps/Step4";
 
 export default function CreateContentModal({ projectId, onClose }: { projectId: number, onClose: () => void }) {
-  // --- وضعیت‌های کلی ---
   const [step, setStep] = useState(1);
   const [articleData, setArticleData] = useState<ArticleData | null>(null);
   const [imageAssets, setImageAssets] = useState<ImageIdeaSet[]>([]);
   const [publishing, setPublishing] = useState(false);
   const [published, setPublished] = useState<string | null>(null);
 
-  // --- وضعیت‌های استپ‌ها ---
   const [topic, setTopic] = useState("");
   const [targetPage, setTargetPage] = useState("");
   const [loading, setLoading] = useState(false);
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [pIds, setPIds] = useState({ gen: "", rev: "", idea: "", draw: "", meta: "" });
   const [pastedJson, setPastedJson] = useState("");
-  const [corrections, setCorrections] = useState({});
-  const [userWantsImage, setUserWantsImage] = useState(true);
+  const [corrections, setCorrections] = useState<Record<string, string>>({});
+  const [userWantsImage, setUserWantsImage] = useState<Record<string, boolean>>({});
   const [isWaitingForCorrection, setIsWaitingForCorrection] = useState(false);
   const [compiledCorrectionPrompt, setCompiledCorrectionPrompt] = useState("");
   const [correctionPastedJson, setCorrectionPastedJson] = useState("");
@@ -34,7 +32,6 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
   const [seoPromptText, setSeoPromptText] = useState("");
   const [seoJsonInput, setSeoJsonInput] = useState("");
 
-  // --- واکشی پرامپت‌ها ---
   useEffect(() => {
     const fetchPrompts = async () => {
       setLoading(true);
@@ -53,8 +50,6 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
     if (projectId) fetchPrompts();
   }, [projectId]);
 
-  // --- هندلرهای منطقی ---
-
   const handleParseInitialJson = () => {
     try {
       const parsedData = JSON.parse(pastedJson);
@@ -69,7 +64,6 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
     const revPrompt = prompts.find((p: any) => String(p.id) === String(pIds.rev));
     const promptText = revPrompt?.text || "متن پرامپت بازبینی در دیتابیس موجود نیست.";
     const finalCorrectionPrompt = `دستورالعمل بازبینی:\n${promptText}\n\nدیتای فعلی مقاله:\n${JSON.stringify(articleData, null, 2)}`;
-    
     setCompiledCorrectionPrompt(finalCorrectionPrompt);
     setIsWaitingForCorrection(true);
   };
@@ -87,11 +81,7 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
   };
 
   const setupImageWorkflow = () => {
-    if (!userWantsImage) {
-      handleFinalPublish(articleData, imageAssets, setPublishing, (msg) => console.log(msg));
-    } else {
-      setStep(4);
-    }
+    setStep(4);
   };
 
   const getFinalGenerationPrompt = () => {
@@ -99,29 +89,37 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
     return `موضوع کلیدی: ${topic}\nلینک هدف: ${targetPage}\n\nدستورالعمل:\n${selectedGenPrompt?.text || ""}`;
   };
 
-  // --- رندر کردن ---
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="relative w-full max-w-5xl bg-[#111111] border border-white/10 rounded-2xl p-6 shadow-2xl my-auto">
-        
-        {/* هدر */}
+
         <div className="flex justify-between items-center border-b border-white/10 pb-4 mb-6">
           <h2 className="text-lg font-bold text-white">میز کار تولید محتوای هوشمند - مرحله {step}</h2>
           <button onClick={onClose} className="text-white/50 hover:text-red-500 transition-colors text-sm font-medium">✕ بستن</button>
         </div>
 
-        {/* سوییچ مراحل */}
         {step === 1 && (
-          <Step1 topic={topic} setTopic={setTopic} targetPage={targetPage} setTargetPage={setTargetPage} loading={loading} prompts={prompts} pIds={pIds} setPIds={setPIds} onNext={() => setStep(2)} />
+          <Step1
+            topic={topic} setTopic={setTopic}
+            targetPage={targetPage} setTargetPage={setTargetPage}
+            loading={loading}
+            prompts={prompts}
+            pIds={pIds} setPIds={setPIds}
+            onNext={() => setStep(2)}
+          />
         )}
 
         {step === 2 && (
-          <Step2 getFinalGenerationPrompt={getFinalGenerationPrompt} pastedJson={pastedJson} setPastedJson={setPastedJson} handleParseInitialJson={handleParseInitialJson} setStep={setStep} />
+          <Step2
+            getFinalGenerationPrompt={getFinalGenerationPrompt}
+            pastedJson={pastedJson} setPastedJson={setPastedJson}
+            handleParseInitialJson={handleParseInitialJson}
+            setStep={setStep}
+          />
         )}
 
-        {/* در اینجا شرط articleData && حذف شد تا Step3 خودش مدیریت لودینگ را بر عهده بگیرد */}
-        {step === 3 && (
-          <Step3 
+        {step === 3 && articleData && (
+          <Step3
             articleData={articleData}
             corrections={corrections} setCorrections={setCorrections}
             userWantsImage={userWantsImage} setUserWantsImage={setUserWantsImage}
@@ -136,13 +134,13 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
         )}
 
         {step === 4 && (
-          <Step4 
+          <Step4
             imageAssets={imageAssets} setImageAssets={setImageAssets}
             published={published} publishing={publishing}
             ideaPromptText={ideaPromptText}
             ideasJsonInput={ideasJsonInput} setIdeasJsonInput={setIdeasJsonInput}
             handleParseIdeasJson={() => console.log("Parsing Ideas...")}
-           handleIdeaSelection={(k: string, v: string) => console.log(k, v)}
+            handleIdeaSelection={(k: string, v: string) => console.log(k, v)}
             seoPromptText={seoPromptText}
             seoJsonInput={seoJsonInput} setSeoJsonInput={setSeoJsonInput}
             handleParseSeoJson={() => console.log("Parsing SEO...")}
