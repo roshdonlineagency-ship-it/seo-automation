@@ -1,36 +1,7 @@
 "use client";
 
 import React from "react";
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-
-interface Section {
-  id: string;
-  h2: string;
-  content: string;
-  needs_image: boolean;
-  image_priority: string;
-  image_suggestion: string;
-}
-
-interface ArticleData {
-  meta_title: string;
-  meta_description: string;
-  focus_keyword: string;
-  slug: string;
-  h1: string;
-  intro: string;
-  sections: Section[];
-  faq: { question: string; answer: string }[];
-  conclusion: string;
-  cta: { text: string; anchor_text: string; target_url: string };
-}
-
-interface Prompt {
-  id: number;
-  name: string;
-  text: string;
-}
+import { ArticleData } from "@/lib/types";
 
 interface Step3Props {
   articleData: ArticleData;
@@ -38,20 +9,15 @@ interface Step3Props {
   setCorrections: React.Dispatch<React.SetStateAction<Record<string, string>>>;
   userWantsImage: Record<string, boolean>;
   setUserWantsImage: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
-  prompts: Prompt[];
-  revPromptId: string;
   isWaitingForCorrection: boolean;
+  setIsWaitingForCorrection: React.Dispatch<React.SetStateAction<boolean>>;
   compiledCorrectionPrompt: string;
   correctionPastedJson: string;
   setCorrectionPastedJson: React.Dispatch<React.SetStateAction<string>>;
-  onGenerateCorrectionPrompt: () => void;
-  onApplyCorrectionJson: () => void;
-  onCancelCorrection: () => void;
-  onGoToImages: () => void;
-  onBack: () => void;
+  handleApplyCorrectionJson: () => void;
+  handleGenerateCorrectionPrompt: () => void;
+  setupImageWorkflow: () => void;
 }
-
-// ─── ContentBlock ─────────────────────────────────────────────────────────────
 
 interface ContentBlockProps {
   label: string;
@@ -106,8 +72,6 @@ const ContentBlock = ({
   </div>
 );
 
-// ─── Step3 ────────────────────────────────────────────────────────────────────
-
 export default function Step3({
   articleData,
   corrections,
@@ -115,82 +79,30 @@ export default function Step3({
   userWantsImage,
   setUserWantsImage,
   isWaitingForCorrection,
+  setIsWaitingForCorrection,
   compiledCorrectionPrompt,
   correctionPastedJson,
   setCorrectionPastedJson,
-  onGenerateCorrectionPrompt,
-  onApplyCorrectionJson,
-  onCancelCorrection,
-  onGoToImages,
-  onBack,
+  handleApplyCorrectionJson,
+  handleGenerateCorrectionPrompt,
+  setupImageWorkflow,
 }: Step3Props) {
   return (
     <div className="space-y-6">
 
-      {/* سئو */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ContentBlock
-          label="متا تایتل سئو (Meta Title)"
-          value={articleData.meta_title}
-          fieldKey="meta_title"
-          corrections={corrections}
-          setCorrections={setCorrections}
-          userWantsImage={userWantsImage}
-          setUserWantsImage={setUserWantsImage}
-        />
-        <ContentBlock
-          label="متا دیسکریپشن (Meta Description)"
-          value={articleData.meta_description}
-          fieldKey="meta_description"
-          corrections={corrections}
-          setCorrections={setCorrections}
-          userWantsImage={userWantsImage}
-          setUserWantsImage={setUserWantsImage}
-        />
+        <ContentBlock label="متا تایتل سئو (Meta Title)" value={articleData.meta_title} fieldKey="meta_title" corrections={corrections} setCorrections={setCorrections} userWantsImage={userWantsImage} setUserWantsImage={setUserWantsImage} />
+        <ContentBlock label="متا دیسکریپشن (Meta Description)" value={articleData.meta_description} fieldKey="meta_description" corrections={corrections} setCorrections={setCorrections} userWantsImage={userWantsImage} setUserWantsImage={setUserWantsImage} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ContentBlock
-          label="کلمه کلیدی تمرکزی"
-          value={articleData.focus_keyword}
-          fieldKey="focus_keyword"
-          corrections={corrections}
-          setCorrections={setCorrections}
-          userWantsImage={userWantsImage}
-          setUserWantsImage={setUserWantsImage}
-        />
-        <ContentBlock
-          label="نامک آدرس (Slug)"
-          value={articleData.slug}
-          fieldKey="slug"
-          corrections={corrections}
-          setCorrections={setCorrections}
-          userWantsImage={userWantsImage}
-          setUserWantsImage={setUserWantsImage}
-        />
+        <ContentBlock label="کلمه کلیدی تمرکزی" value={articleData.focus_keyword} fieldKey="focus_keyword" corrections={corrections} setCorrections={setCorrections} userWantsImage={userWantsImage} setUserWantsImage={setUserWantsImage} />
+        <ContentBlock label="نامک آدرس (Slug)" value={articleData.slug} fieldKey="slug" corrections={corrections} setCorrections={setCorrections} userWantsImage={userWantsImage} setUserWantsImage={setUserWantsImage} />
       </div>
 
-      {/* محتوا */}
-      <ContentBlock
-        label="عنوان اصلی مقاله (H1)"
-        value={articleData.h1}
-        fieldKey="h1"
-        corrections={corrections}
-        setCorrections={setCorrections}
-        userWantsImage={userWantsImage}
-        setUserWantsImage={setUserWantsImage}
-      />
-      <ContentBlock
-        label="مقدمه شروع مقاله (Introduction)"
-        value={articleData.intro}
-        fieldKey="intro"
-        corrections={corrections}
-        setCorrections={setCorrections}
-        userWantsImage={userWantsImage}
-        setUserWantsImage={setUserWantsImage}
-      />
+      <ContentBlock label="عنوان اصلی مقاله (H1)" value={articleData.h1} fieldKey="h1" corrections={corrections} setCorrections={setCorrections} userWantsImage={userWantsImage} setUserWantsImage={setUserWantsImage} />
+      <ContentBlock label="مقدمه شروع مقاله (Introduction)" value={articleData.intro} fieldKey="intro" corrections={corrections} setCorrections={setCorrections} userWantsImage={userWantsImage} setUserWantsImage={setUserWantsImage} />
 
-      {/* سکشن‌ها */}
       <div className="space-y-4">
         <p className="text-white/40 text-xs border-r-2 border-violet-500 pr-2 font-bold">
           بخش هدینگ‌ها و بدنه سکشن‌های مقاله
@@ -209,18 +121,8 @@ export default function Step3({
         ))}
       </div>
 
-      {/* جمع‌بندی */}
-      <ContentBlock
-        label="پاراگراف خلاصه و جمع‌بندی"
-        value={articleData.conclusion}
-        fieldKey="conclusion"
-        corrections={corrections}
-        setCorrections={setCorrections}
-        userWantsImage={userWantsImage}
-        setUserWantsImage={setUserWantsImage}
-      />
+      <ContentBlock label="پاراگراف خلاصه و جمع‌بندی" value={articleData.conclusion} fieldKey="conclusion" corrections={corrections} setCorrections={setCorrections} userWantsImage={userWantsImage} setUserWantsImage={setUserWantsImage} />
 
-      {/* باکس اصلاحیه */}
       {isWaitingForCorrection && (
         <div className="bg-amber-500/10 border border-amber-500/30 p-5 rounded-2xl space-y-4 my-6">
           <div className="flex justify-between items-center">
@@ -228,10 +130,7 @@ export default function Step3({
               🛠️ دیتای گزارش اصلاحات کامپایل شد! آن را کپی کرده و به مدل زبانی تحویل دهید:
             </p>
             <button
-              onClick={() => {
-                navigator.clipboard.writeText(compiledCorrectionPrompt);
-                alert("پرامپت اصلاحیه کپی شد!");
-              }}
+              onClick={() => { navigator.clipboard.writeText(compiledCorrectionPrompt); alert("پرامپت اصلاحیه کپی شد!"); }}
               className="bg-amber-600 hover:bg-amber-500 text-white text-xs px-3 py-1 rounded-lg"
             >
               📋 کپی پرامپت اصلاحیه
@@ -258,13 +157,13 @@ export default function Step3({
 
           <div className="flex gap-2 justify-end">
             <button
-              onClick={onCancelCorrection}
+              onClick={() => setIsWaitingForCorrection(false)}
               className="text-white/40 hover:text-white text-xs px-4 py-2 rounded-xl"
             >
               انصراف
             </button>
             <button
-              onClick={onApplyCorrectionJson}
+              onClick={handleApplyCorrectionJson}
               disabled={!correctionPastedJson}
               className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-5 py-2 rounded-xl font-medium disabled:opacity-40"
             >
@@ -274,22 +173,15 @@ export default function Step3({
         </div>
       )}
 
-      {/* دکمه‌های پایین */}
       <div className="border-t border-white/10 pt-5 flex flex-wrap gap-3">
         <button
-          onClick={onBack}
-          className="bg-white/5 border border-white/10 px-6 py-3 rounded-xl text-sm text-white font-medium hover:bg-white/10 transition-colors"
-        >
-          بازگشت
-        </button>
-        <button
-          onClick={onGenerateCorrectionPrompt}
+          onClick={handleGenerateCorrectionPrompt}
           className="bg-amber-600 hover:bg-amber-500 px-5 py-3.5 rounded-xl text-sm font-medium text-white flex-1 min-w-[180px] transition-colors"
         >
           ⚙️ ساخت پرامپت اصلاحیه سردبیری
         </button>
         <button
-          onClick={onGoToImages}
+          onClick={setupImageWorkflow}
           className="bg-violet-600 hover:bg-violet-500 px-5 py-3.5 rounded-xl text-sm font-bold text-white flex-1 min-w-[220px] shadow-lg shadow-violet-600/20 transition-all"
         >
           گام بعد: مدیریت و استودیو تصاویر هوشمند ✨
