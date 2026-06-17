@@ -70,7 +70,6 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
           generatedPrompt: `${drawPromptBase}\n\nIdea: ${newIdea}`
         }
       };
-      // آپدیت همزمان پرامپت سئو
       refreshSeoPrompt(updatedAssets);
       return updatedAssets;
     });
@@ -91,7 +90,7 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
         };
       });
       setImageAssets(newAssets);
-      refreshSeoPrompt(newAssets); // آپدیت پرامپت سئو
+      refreshSeoPrompt(newAssets);
     } catch (e) { alert("خطا در پارس ایده‌ها"); }
   };
 
@@ -106,7 +105,7 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
             next[item.section_id].altText = item.alt;
           }
         });
-        refreshSeoPrompt(next); // آپدیت پرامپت سئو
+        refreshSeoPrompt(next);
         return next;
       });
     } catch (e) { alert("خطا در پارس سئو"); }
@@ -139,7 +138,6 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
     setStep(4);
   };
 
-  // توابع کمکی دیگر
   const handleParseInitialJson = () => { try { const parsedData = cleanAndParseJson(pastedJson); setArticleData(parsedData); const imageToggles: any = { h1: false, intro: false, conclusion: false }; parsedData.sections?.forEach((sec: any) => imageToggles[sec.id] = sec.needs_image ?? false); setUserWantsImage(imageToggles); setStep(3); } catch (e) { alert("JSON نامعتبر"); } };
   const handleGenerateCorrectionPrompt = () => { if (!articleData) return; const revPrompt = prompts.find((p: any) => String(p.id) === String(pIds.rev)); setCompiledCorrectionPrompt(`${revPrompt?.text}\n\nDATA:\n${JSON.stringify(articleData, null, 2)}`); setIsWaitingForCorrection(true); };
   const handleApplyCorrectionJson = () => { try { const parsedData = cleanAndParseJson(correctionPastedJson); setArticleData(parsedData); alert("اصلاح شد!"); setIsWaitingForCorrection(false); } catch (e) { alert("خطا در پارس"); } };
@@ -171,7 +169,7 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
             seoJsonInput={seoJsonInput} 
             setSeoJsonInput={setSeoJsonInput} 
             handleParseSeoJson={handleParseSeoJson} 
-            handleFinalPublish={() => handleFinalPublish(articleData!, Object.values(imageAssets), setPublishing, (link) => setPublished(link))} 
+            handleFinalPublish={() => handleFinalPublish(articleData!, imageAssets, setPublishing, (link) => setPublished(link))} 
             setStep={setStep} 
           />
         )}
