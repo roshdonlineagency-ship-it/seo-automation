@@ -46,6 +46,24 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
     return JSON.parse(clean);
   };
 
+  // --- Core Handlers (FIXED) ---
+  const handleIdeaSelection = (key: string, newIdea: string) => {
+    const drawPromptBase = prompts.find((p: any) => String(p.id) === String(pIds.draw))?.text || "";
+    
+    setImageAssets(prev => {
+      if (!prev[key]) return prev;
+      return {
+        ...prev,
+        [key]: {
+          ...prev[key],
+          selectedIdea: newIdea,
+          // اینجا پرامپت با ایده جدید آپدیت می‌شود
+          generatedPrompt: `${drawPromptBase}\n\nIdea: ${newIdea}`
+        }
+      };
+    });
+  };
+
   // --- Initial Load ---
   useEffect(() => {
     const fetchPrompts = async () => {
@@ -172,7 +190,23 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
         )}
 
         {step === 4 && (
-          <Step4 imageAssets={imageAssets} setImageAssets={setImageAssets} published={published} publishing={publishing} ideaPromptText={ideaPromptText} ideasJsonInput={ideasJsonInput} setIdeasJsonInput={setIdeasJsonInput} handleParseIdeasJson={handleParseIdeasJson} handleIdeaSelection={(k, v) => setImageAssets(p => ({ ...p, [k]: { ...p[k], selectedIdea: v } }))} seoPromptText={seoPromptText} seoJsonInput={seoJsonInput} setSeoJsonInput={setSeoJsonInput} handleParseSeoJson={handleParseSeoJson} handleFinalPublish={() => handleFinalPublish(articleData!, Object.values(imageAssets), setPublishing, (link) => setPublished(link))} setStep={setStep} />
+          <Step4 
+            imageAssets={imageAssets} 
+            setImageAssets={setImageAssets} 
+            published={published} 
+            publishing={publishing} 
+            ideaPromptText={ideaPromptText} 
+            ideasJsonInput={ideasJsonInput} 
+            setIdeasJsonInput={setIdeasJsonInput} 
+            handleParseIdeasJson={handleParseIdeasJson} 
+            handleIdeaSelection={handleIdeaSelection} // تابع اصلاح شده پاس داده شد
+            seoPromptText={seoPromptText} 
+            seoJsonInput={seoJsonInput} 
+            setSeoJsonInput={setSeoJsonInput} 
+            handleParseSeoJson={handleParseSeoJson} 
+            handleFinalPublish={() => handleFinalPublish(articleData!, Object.values(imageAssets), setPublishing, (link) => setPublished(link))} 
+            setStep={setStep} 
+          />
         )}
       </div>
     </div>
