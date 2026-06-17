@@ -41,39 +41,44 @@ export default function Step1(props: any) {
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* ۱. ساختار */}
             <div>
               <label className="block text-white/40 text-[11px] mb-1.5">۱. ساختار بریف:</label>
               <select value={pIds.gen} onChange={(e) => updatePId("gen", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-violet-500">
                 <option value="" className="bg-[#111]">انتخاب کنید</option>
-                {prompts.map((p: any) => <option key={p.id} value={p.id} className="bg-[#111]">{p.name}</option>)}
+                {prompts?.map((p: any) => <option key={p.id} value={p.id} className="bg-[#111]">{p.name}</option>)}
               </select>
             </div>
+            {/* ۲. بازبینی */}
             <div>
               <label className="block text-white/40 text-[11px] mb-1.5">۲. بازبینی (Revision):</label>
               <select value={pIds.rev} onChange={(e) => updatePId("rev", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-violet-500">
                 <option value="" className="bg-[#111]">انتخاب کنید</option>
-                {prompts.map((p: any) => <option key={p.id} value={p.id} className="bg-[#111]">{p.name}</option>)}
+                {prompts?.map((p: any) => <option key={p.id} value={p.id} className="bg-[#111]">{p.name}</option>)}
               </select>
             </div>
+            {/* ۳. ایده تصویر */}
             <div>
               <label className="block text-white/40 text-[11px] mb-1.5">۳. ایده تصویر:</label>
               <select value={pIds.idea} onChange={(e) => updatePId("idea", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-violet-500">
                 <option value="" className="bg-[#111]">انتخاب کنید</option>
-                {prompts.map((p: any) => <option key={p.id} value={p.id} className="bg-[#111]">{p.name}</option>)}
+                {prompts?.map((p: any) => <option key={p.id} value={p.id} className="bg-[#111]">{p.name}</option>)}
               </select>
             </div>
+            {/* ۴. ترسیم */}
             <div>
               <label className="block text-white/40 text-[11px] mb-1.5">۴. ترسیم (Draw):</label>
               <select value={pIds.draw} onChange={(e) => updatePId("draw", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-violet-500">
                 <option value="" className="bg-[#111]">انتخاب کنید</option>
-                {prompts.map((p: any) => <option key={p.id} value={p.id} className="bg-[#111]">{p.name}</option>)}
+                {prompts?.map((p: any) => <option key={p.id} value={p.id} className="bg-[#111]">{p.name}</option>)}
               </select>
             </div>
+            {/* ۵. متا سئو */}
             <div>
               <label className="block text-white/40 text-[11px] mb-1.5">۵. متا سئو:</label>
               <select value={pIds.meta} onChange={(e) => updatePId("meta", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-violet-500">
                 <option value="" className="bg-[#111]">انتخاب کنید</option>
-                {prompts.map((p: any) => <option key={p.id} value={p.id} className="bg-[#111]">{p.name}</option>)}
+                {prompts?.map((p: any) => <option key={p.id} value={p.id} className="bg-[#111]">{p.name}</option>)}
               </select>
             </div>
           </div>
