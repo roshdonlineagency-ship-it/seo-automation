@@ -1,5 +1,7 @@
 export default function Step3({
   articleData,
+  corrections,
+  setCorrections,
   userWantsImage,
   setUserWantsImage,
   isWaitingForCorrection,
@@ -11,26 +13,31 @@ export default function Step3({
   handleGenerateCorrectionPrompt,
   setupImageWorkflow,
 }: any) {
+
+  // اگر دیتا هنوز لود نشده
+  if (!articleData) {
+    return <div className="p-8 text-center text-white/30">در حال بارگذاری داده‌های مقاله...</div>;
+  }
+
   return (
-    <div className="flex flex-col gap-6 w-full">
-      {/* عنوان */}
+    <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">
       <h3 className="text-xl font-bold text-white border-b border-white/10 pb-2">✍️ میز سردبیری و اصلاحات</h3>
 
-      {/* ۱. بخش نمایش داده‌ها (متاها) */}
+      {/* ۱. نمایش متاها */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-[#1a1a1a] p-4 rounded-xl border border-white/5">
           <label className="text-[10px] text-white/40 uppercase font-bold tracking-wider">متا تایتل</label>
-          <p className="text-sm text-white mt-1">{articleData?.seo_title || "در حال بارگذاری..."}</p>
+          <p className="text-sm text-white mt-1">{articleData.seo_title || "بدون عنوان"}</p>
         </div>
         <div className="bg-[#1a1a1a] p-4 rounded-xl border border-white/5">
           <label className="text-[10px] text-white/40 uppercase font-bold tracking-wider">متا دیسکریپشن</label>
-          <p className="text-sm text-white mt-1">{articleData?.meta_description || "در حال بارگذاری..."}</p>
+          <p className="text-sm text-white mt-1">{articleData.meta_description || "بدون توضیحات"}</p>
         </div>
       </div>
 
-      {/* ۲. باکس اصلاحیه (بخش منطقی) */}
+      {/* ۲. باکس اصلاحیه */}
       <div className="bg-amber-900/10 border border-amber-900/30 p-5 rounded-xl">
-        <h4 className="text-amber-500 font-bold mb-3">🔄 بازنویسی و اصلاح متن</h4>
+        <h4 className="text-amber-500 font-bold mb-3 text-sm">🔄 بازنویسی و اصلاح متن</h4>
         {!isWaitingForCorrection ? (
           <button 
             onClick={handleGenerateCorrectionPrompt}
@@ -57,7 +64,7 @@ export default function Step3({
         )}
       </div>
 
-      {/* ۳. تنظیمات تصویر و دکمه نهایی */}
+      {/* ۳. تنظیمات تصویر */}
       <div className="flex flex-col gap-4 mt-2">
         <label className="flex items-center gap-3 p-4 bg-white/5 rounded-xl cursor-pointer hover:bg-white/10 transition-all">
           <input 
