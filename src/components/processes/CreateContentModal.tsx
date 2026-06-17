@@ -55,7 +55,6 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
       const parsedData: ArticleData = JSON.parse(pastedJson);
       setArticleData(parsedData);
 
-      // ── initialize userWantsImage از روی needs_image هر سکشن ──
       const imageToggles: Record<string, boolean> = {
         h1: false,
         intro: false,
@@ -65,7 +64,6 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
         imageToggles[sec.id] = sec.needs_image ?? false;
       });
       setUserWantsImage(imageToggles);
-
       setStep(3);
     } catch (error) {
       alert("خطا: فرمت JSON نامعتبر است!");
@@ -73,9 +71,35 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
   };
 
   const handleGenerateCorrectionPrompt = () => {
+    if (!articleData) return;
     const revPrompt = prompts.find((p: any) => String(p.id) === String(pIds.rev));
     const promptText = revPrompt?.text || "متن پرامپت بازبینی در دیتابیس موجود نیست.";
-    const finalCorrectionPrompt = `دستورالعمل بازبینی:\n${promptText}\n\nدیتای فعلی مقاله:\n${JSON.stringify(articleData, null, 2)}`;
+
+    // ساخت گزارش اصلاحات با همان ساختار JSON مقاله
+    const reviewReport = {
+      meta_title: corrections["meta_title"]?.trim() || "تایید شده (عینا تکرار شود)",
+      meta_description: corrections["meta_description"]?.trim() || "تایید شده (عینا تکرار شود)",
+      focus_keyword: corrections["focus_keyword"]?.trim() || "تایید شده (عینا تکرار شود)",
+      slug: corrections["slug"]?.trim() || "تایید شده (عینا تکرار شود)",
+      h1: corrections["h1"]?.trim() || "تایید شده (عینا تکرار شود)",
+      intro: corrections["intro"]?.trim() || "تایید شده (عینا تکرار شود)",
+      conclusion: corrections["conclusion"]?.trim() || "تایید شده (عینا تکرار شود)",
+      sections: articleData.sections?.map((sec) => ({
+        id: sec.id,
+        h2: sec.h2,
+        status: corrections[sec.id]?.trim() || "تایید شده (عینا تکرار شود)",
+      })),
+    };
+
+    const finalCorrectionPrompt =
+`${promptText}
+
+دیتای فعلی مقاله (JSON کامل):
+${JSON.stringify(articleData, null, 2)}
+
+گزارش اصلاحات سردبیری:
+${JSON.stringify(reviewReport, null, 2)}`;
+
     setCompiledCorrectionPrompt(finalCorrectionPrompt);
     setIsWaitingForCorrection(true);
   };
@@ -85,7 +109,6 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
       const parsedData: ArticleData = JSON.parse(correctionPastedJson);
       setArticleData(parsedData);
 
-      // ── بعد از اصلاحیه هم userWantsImage رو آپدیت کن ──
       const imageToggles: Record<string, boolean> = {
         h1: userWantsImage["h1"] ?? false,
         intro: userWantsImage["intro"] ?? false,
@@ -99,6 +122,7 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
       alert("اصلاحات اعمال شد! 🚀");
       setIsWaitingForCorrection(false);
       setCorrectionPastedJson("");
+      setCorrections({});
     } catch (error) {
       alert("خطا: فرمت JSON اصلاحیه نامعتبر است!");
     }
