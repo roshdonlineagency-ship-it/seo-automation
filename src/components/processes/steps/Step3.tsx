@@ -1,3 +1,54 @@
+import { useState } from "react";
+
+// اینترفیس پراپ‌های بلاک متنی (برای رعایت تایپ‌اسکریپت)
+interface ContentBlockProps {
+  label: string;
+  value: string;
+  fieldKey: string;
+  corrections: Record<string, string>;
+  setCorrections: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+  userWantsImage: Record<string, boolean>;
+  setUserWantsImage: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+}
+
+// کامپوننت کمکی بلاک متنی
+const ContentBlock = ({ 
+  label, 
+  value, 
+  fieldKey, 
+  corrections, 
+  setCorrections, 
+  userWantsImage, 
+  setUserWantsImage 
+}: ContentBlockProps) => (
+  <div className="p-5 rounded-2xl border border-white/10 bg-white/5 space-y-4 transition-colors hover:border-white/20">
+    <div className="flex justify-between items-center">
+      <span className="text-violet-400 text-xs font-bold bg-violet-500/10 px-3 py-1 rounded-full">{label}</span>
+      <label className="flex items-center gap-2 cursor-pointer text-xs text-white/60 select-none">
+        <input 
+          type="checkbox" 
+          checked={!!userWantsImage[fieldKey]} 
+          onChange={(e) => setUserWantsImage((prev) => ({ ...prev, [fieldKey]: e.target.checked }))}
+          className="rounded border-white/20 bg-transparent text-violet-600 focus:ring-violet-500 w-4 h-4"
+        />
+        نیاز به تصویر
+      </label>
+    </div>
+    
+    <div className="text-sm text-white/80 leading-7 bg-black/20 p-3 rounded-xl border border-white/5 whitespace-pre-wrap">
+      {value}
+    </div>
+
+    <input
+      type="text"
+      value={corrections[fieldKey] || ""}
+      onChange={(e) => setCorrections((prev) => ({ ...prev, [fieldKey]: e.target.value }))}
+      placeholder="یادداشت یا نکته اصلاحی سردبیری..."
+      className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-white placeholder:text-white/20 focus:outline-none focus:border-violet-500 transition-colors"
+    />
+  </div>
+);
+
 export default function Step3({
   articleData,
   corrections,
@@ -14,79 +65,70 @@ export default function Step3({
   setupImageWorkflow,
 }: any) {
 
-  // ۱. حفاظت از برنامه (اگر دیتا نیست، صفحه را خالی نشان نده)
   if (!articleData) {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 text-center space-y-4">
-        <div className="w-12 h-12 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-        <p className="text-white/50 text-sm">در حال بارگذاری یا پردازش داده‌های مقاله...</p>
-        <p className="text-white/30 text-xs">اگر این پیام ماندگار شد، مرحله قبل را چک کن.</p>
-      </div>
-    );
+    return <div className="text-center p-10 text-white/50">در حال لودینگ دیتا...</div>;
   }
 
   return (
-    <div className="flex flex-col gap-6 w-full animate-in fade-in duration-300">
-      <h3 className="text-xl font-bold text-white border-b border-white/10 pb-2">✍️ میز سردبیری و اصلاحات</h3>
-
-      {/* ۱. نمایش اطلاعات مقاله */}
+    <div className="space-y-6">
+      {/* ۱. متا دیتا */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-[#1a1a1a] p-4 rounded-xl border border-white/5">
-          <label className="text-[10px] text-white/40 uppercase font-bold tracking-wider">متا تایتل</label>
-          <p className="text-sm text-white mt-1 break-words">{articleData?.seo_title || "عنوان یافت نشد"}</p>
-        </div>
-        <div className="bg-[#1a1a1a] p-4 rounded-xl border border-white/5">
-          <label className="text-[10px] text-white/40 uppercase font-bold tracking-wider">متا دیسکریپشن</label>
-          <p className="text-sm text-white mt-1 break-words">{articleData?.meta_description || "توضیحات یافت نشد"}</p>
-        </div>
+        <ContentBlock label="متا تایتل سئو" value={articleData.meta_title} fieldKey="meta_title" corrections={corrections} setCorrections={setCorrections} userWantsImage={userWantsImage} setUserWantsImage={setUserWantsImage} />
+        <ContentBlock label="متا دیسکریپشن" value={articleData.meta_description} fieldKey="meta_description" corrections={corrections} setCorrections={setCorrections} userWantsImage={userWantsImage} setUserWantsImage={setUserWantsImage} />
       </div>
 
-      {/* ۲. بخش اصلاحیه */}
-      <div className="bg-amber-900/10 border border-amber-900/30 p-5 rounded-xl">
-        <h4 className="text-amber-500 font-bold mb-3 text-sm">🔄 بازنویسی و اصلاح متن</h4>
-        {!isWaitingForCorrection ? (
-          <button 
-            onClick={handleGenerateCorrectionPrompt}
-            className="w-full py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg transition-all"
-          >
-            ایجاد پرامپت اصلاحیه
-          </button>
-        ) : (
-          <div className="space-y-4">
-            <textarea readOnly value={compiledCorrectionPrompt} className="w-full h-20 bg-black/50 text-[10px] text-white/70 p-3 rounded-lg border border-white/10" />
-            <textarea 
-              placeholder="خروجی JSON اصلاح شده را اینجا پیست کنید..."
-              value={correctionPastedJson}
-              onChange={(e) => setCorrectionPastedJson(e.target.value)}
-              className="w-full h-24 bg-black/50 text-white p-3 text-xs rounded-lg border border-emerald-500/50 focus:border-emerald-500 outline-none"
-            />
-            <button 
-              onClick={handleApplyCorrectionJson}
-              className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg"
-            >
-              ✅ اعمال اصلاحات روی دیتا
-            </button>
-          </div>
-        )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <ContentBlock label="کلمه کلیدی تمرکزی" value={articleData.focus_keyword} fieldKey="focus_keyword" corrections={corrections} setCorrections={setCorrections} userWantsImage={userWantsImage} setUserWantsImage={setUserWantsImage} />
+        <ContentBlock label="نامک آدرس (Slug)" value={articleData.slug} fieldKey="slug" corrections={corrections} setCorrections={setCorrections} userWantsImage={userWantsImage} setUserWantsImage={setUserWantsImage} />
       </div>
 
-      {/* ۳. تنظیمات تصویر */}
-      <div className="flex flex-col gap-4 mt-2">
-        <label className="flex items-center gap-3 p-4 bg-white/5 rounded-xl cursor-pointer hover:bg-white/10 transition-all">
-          <input 
-            type="checkbox" 
-            checked={userWantsImage} 
-            onChange={(e) => setUserWantsImage(e.target.checked)}
-            className="w-5 h-5 accent-indigo-500"
+      {/* ۲. محتوای اصلی */}
+      <ContentBlock label="عنوان اصلی مقاله (H1)" value={articleData.h1} fieldKey="h1" corrections={corrections} setCorrections={setCorrections} userWantsImage={userWantsImage} setUserWantsImage={setUserWantsImage} />
+      <ContentBlock label="مقدمه" value={articleData.intro} fieldKey="intro" corrections={corrections} setCorrections={setCorrections} userWantsImage={userWantsImage} setUserWantsImage={setUserWantsImage} />
+
+      <div className="space-y-4">
+        <p className="text-white/40 text-xs border-r-2 border-violet-500 pr-2 font-bold">بخش هدینگ‌ها و بدنه سکشن‌های مقاله</p>
+        {articleData.sections?.map((sec: any) => (
+          <ContentBlock 
+            key={sec.id}
+            label={`سرفصل دوم (H2): ${sec.h2}`} 
+            fieldKey={sec.id} 
+            value={sec.content}
+            corrections={corrections}
+            setCorrections={setCorrections}
+            userWantsImage={userWantsImage}
+            setUserWantsImage={setUserWantsImage}
           />
-          <span className="text-white text-sm">تولید تصاویر هوشمند برای این مقاله فعال باشد</span>
-        </label>
+        ))}
+      </div>
 
-        <button 
-          onClick={setupImageWorkflow}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-xl font-bold text-lg shadow-lg shadow-indigo-900/20 transition-all"
-        >
-          {userWantsImage ? "انتقال به مرحله تصویرسازی (مرحله ۴) 🎨" : "تایید نهایی و انتشار مقاله 🚀"}
+      <ContentBlock label="جمع‌بندی" value={articleData.conclusion} fieldKey="conclusion" corrections={corrections} setCorrections={setCorrections} userWantsImage={userWantsImage} setUserWantsImage={setUserWantsImage} />
+
+      {/* ۳. بخش اصلاحیه */}
+      {isWaitingForCorrection && (
+        <div className="bg-amber-500/10 border border-amber-500/30 p-5 rounded-2xl space-y-4 my-6">
+          <p className="text-amber-400 text-xs font-semibold">🛠️ پرامپت اصلاحات آماده است، آن را به مدل زبانی بدهید:</p>
+          <textarea readOnly value={compiledCorrectionPrompt} className="w-full h-32 bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white/70 font-mono" />
+          <textarea 
+            value={correctionPastedJson}
+            onChange={(e) => setCorrectionPastedJson(e.target.value)}
+            placeholder="خروجی JSON اصلاح‌شده را اینجا پیست کنید..."
+            className="w-full h-32 bg-black/60 border border-white/10 rounded-xl p-3 text-xs text-white font-mono"
+          />
+          <div className="flex gap-2">
+            <button onClick={() => setIsWaitingForCorrection(false)} className="text-white/40 text-xs px-4">انصراف</button>
+            <button onClick={handleApplyCorrectionJson} className="bg-emerald-600 px-5 py-2 rounded-xl text-xs font-medium text-white">✅ بروزرسانی</button>
+          </div>
+        </div>
+      )}
+
+      {/* ۴. دکمه‌های نهایی */}
+      <div className="border-t border-white/10 pt-5 flex gap-3">
+        <button onClick={handleGenerateCorrectionPrompt} className="bg-amber-600 hover:bg-amber-500 px-5 py-3.5 rounded-xl text-sm font-medium text-white flex-1">
+          ⚙️ ساخت پرامپت اصلاحیه
+        </button>
+        <button onClick={setupImageWorkflow} className="bg-violet-600 hover:bg-violet-500 px-5 py-3.5 rounded-xl text-sm font-bold text-white flex-1">
+          گام بعد: استودیو تصاویر ✨
         </button>
       </div>
     </div>
