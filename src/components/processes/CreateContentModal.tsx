@@ -12,7 +12,7 @@ import Step4 from "@/components/processes/steps/Step4";
 export default function CreateContentModal({ projectId, onClose }: { projectId: number, onClose: () => void }) {
   const [step, setStep] = useState(1);
   const [articleData, setArticleData] = useState<ArticleData | null>(null);
-  const [imageAssets, setImageAssets] = useState<ImageIdeaSet[]>([]);
+  const [imageAssets, setImageAssets] = useState<Record<string, ImageIdeaSet>>({});
   const [publishing, setPublishing] = useState(false);
   const [published, setPublished] = useState<string | null>(null);
 
