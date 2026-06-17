@@ -1,92 +1,89 @@
-// یک کامپوننت کمکی برای نمایش بلاک‌های محتوا
-function ContentBlock({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="space-y-1.5">
-      <label className="text-[11px] text-white/50">{label}</label>
-      <textarea
-        value={value || ""}
-        className="w-full bg-black/20 border border-white/10 rounded-xl p-3 text-sm text-white focus:outline-none min-h-[100px]"
-        readOnly
-      />
-    </div>
-  );
-}
-
-export default function Step3(props: any) {
-  // جدا کردن پراپ‌ها در بدنه تابع برای جلوگیری از خطای Build
-  const {
-    articleData,
-    corrections,
-    setCorrections,
-    userWantsImage,
-    setUserWantsImage,
-    isWaitingForCorrection,
-    setIsWaitingForCorrection,
-    compiledCorrectionPrompt,
-    correctionPastedJson,
-    setCorrectionPastedJson,
-    handleApplyCorrectionJson,
-    handleGenerateCorrectionPrompt,
-    setupImageWorkflow,
-  } = props;
-
-  // چک کردن اینکه آیا articleData موجود است یا خیر
-  if (!articleData) {
-    return <div className="text-white/40 text-center py-10 text-sm">در حال بارگذاری محتوای بریف...</div>;
-  }
-
+export default function Step3({
+  articleData,
+  corrections,
+  setCorrections,
+  userWantsImage,
+  setUserWantsImage,
+  isWaitingForCorrection,
+  setIsWaitingForCorrection,
+  compiledCorrectionPrompt,
+  correctionPastedJson,
+  setCorrectionPastedJson,
+  handleApplyCorrectionJson,
+  handleGenerateCorrectionPrompt,
+  setupImageWorkflow,
+}: any) {
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <ContentBlock label="متا تایتل سئو" value={articleData.meta_title} />
-        <ContentBlock label="متا دیسکریپشن" value={articleData.meta_description} />
-      </div>
-      
-      {/* لیست سکشن‌ها */}
-      <div className="space-y-4">
-        {articleData.sections?.map((sec: any) => (
-          <ContentBlock key={sec.id} label={`سرفصل: ${sec.h2}`} value={sec.content} />
-        ))}
+      <div className="border-b border-white/10 pb-4">
+        <h3 className="text-lg font-bold text-white">✍️ مرحله ۳: میز سردبیری و اصلاحات</h3>
       </div>
 
-      {/* باکس اصلاحات */}
-      {isWaitingForCorrection && (
-        <div className="bg-amber-500/10 border border-amber-500/30 p-5 rounded-2xl space-y-4">
-           <textarea 
-             readOnly 
-             value={compiledCorrectionPrompt} 
-             className="w-full h-32 bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white/70 font-mono" 
-           />
-           <textarea 
-             value={correctionPastedJson} 
-             onChange={(e) => setCorrectionPastedJson(e.target.value)} 
-             placeholder="JSON اصلاح‌شده را اینجا پیست کنید..." 
-             className="w-full h-32 bg-black/60 border border-white/10 rounded-xl p-3 text-xs text-white font-mono" 
-           />
-           <button 
-             onClick={handleApplyCorrectionJson} 
-             className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2 rounded-xl text-xs transition-colors"
-           >
-             بروزرسانی میز تحریریه
-           </button>
+      {/* نمایش متون (در اینجا می‌توانید اینپوت‌ها را ویرایش‌شدنی کنید) */}
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-white/5 p-4 rounded-xl">
+          <label className="text-[10px] text-white/50 uppercase font-bold">متا تایتل</label>
+          <p className="text-sm text-white mt-1">{articleData?.seo_title}</p>
         </div>
-      )}
-
-      {/* دکمه‌های کنترل */}
-      <div className="border-t border-white/10 pt-5 flex gap-3">
-        <button 
-          onClick={handleGenerateCorrectionPrompt} 
-          className="bg-amber-600 hover:bg-amber-500 px-5 py-3 rounded-xl text-sm font-medium text-white transition-colors"
-        >
-          ⚙️ ساخت پرامپت اصلاحیه
-        </button>
-        <button 
-          onClick={setupImageWorkflow} 
-          className="bg-violet-600 hover:bg-violet-500 px-5 py-3 rounded-xl text-sm font-bold text-white flex-1 transition-colors"
-        >
-          مدیریت و استودیو تصاویر ✨
-        </button>
+        <div className="bg-white/5 p-4 rounded-xl">
+          <label className="text-[10px] text-white/50 uppercase font-bold">متا دیسکریپشن</label>
+          <p className="text-sm text-white mt-1">{articleData?.meta_description}</p>
+        </div>
       </div>
+
+      {/* بخش اصلاحیه */}
+      <div className="bg-amber-500/5 border border-amber-500/20 p-4 rounded-xl">
+        {!isWaitingForCorrection ? (
+          <button 
+            onClick={handleGenerateCorrectionPrompt}
+            className="w-full py-3 bg-amber-600/20 hover:bg-amber-600/40 text-amber-500 text-sm font-bold rounded-lg transition-colors border border-amber-500/30"
+          >
+            🔄 ایجاد پرامپت اصلاحیه و بازنویسی
+          </button>
+        ) : (
+          <div className="space-y-3">
+            <p className="text-amber-500 text-xs font-bold">پرامپت تولید شد! آن را در چت‌بات استفاده کنید و نتیجه JSON را اینجا قرار دهید:</p>
+            <textarea 
+              readOnly 
+              value={compiledCorrectionPrompt}
+              className="w-full h-24 bg-black/40 text-white/70 p-3 text-[10px] rounded-lg border border-white/10 font-mono"
+            />
+            <textarea 
+              placeholder="JSON خروجی اصلاح شده را اینجا پیست کنید..."
+              value={correctionPastedJson}
+              onChange={(e) => setCorrectionPastedJson(e.target.value)}
+              className="w-full h-24 bg-black/40 text-white p-3 text-xs rounded-lg border border-emerald-500/30 focus:border-emerald-500 outline-none"
+            />
+            <button 
+              onClick={handleApplyCorrectionJson}
+              className="w-full py-2 bg-emerald-600 text-white text-sm font-bold rounded-lg"
+            >
+              ✅ اعمال اصلاحات روی دیتای مقاله
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* تنظیمات نهایی */}
+      <div className="flex items-center justify-between bg-white/5 p-4 rounded-xl">
+        <label className="text-white text-sm flex items-center gap-3 cursor-pointer">
+          <input 
+            type="checkbox" 
+            checked={userWantsImage} 
+            onChange={(e) => setUserWantsImage(e.target.checked)}
+            className="w-4 h-4 rounded border-white/20"
+          />
+          نیاز به تولید تصویر برای این مقاله دارم
+        </label>
+      </div>
+
+      {/* دکمه نهایی */}
+      <button 
+        onClick={setupImageWorkflow}
+        className="w-full bg-indigo-600 hover:bg-indigo-500 text-white py-4 rounded-xl font-bold transition-all"
+      >
+        {userWantsImage ? "انتقال به مرحله تصویرسازی (مرحله ۴) 🎨" : "تایید نهایی و انتشار مقاله 🚀"}
+      </button>
     </div>
   );
 }
