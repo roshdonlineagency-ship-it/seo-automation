@@ -10,28 +10,43 @@ import Step3 from "@/components/processes/steps/Step3";
 import Step4 from "@/components/processes/steps/Step4";
 
 export default function CreateContentModal({ projectId, onClose }: { projectId: number, onClose: () => void }) {
+  // --- States ---
   const [step, setStep] = useState(1);
-  const [articleData, setArticleData] = useState<ArticleData | null>(null);
-  const [imageAssets, setImageAssets] = useState<Record<string, ImageIdeaSet>>({});
-  const [publishing, setPublishing] = useState(false);
-  const [published, setPublished] = useState<string | null>(null);
-
-  const [topic, setTopic] = useState("");
-  const [targetPage, setTargetPage] = useState("");
   const [loading, setLoading] = useState(false);
   const [prompts, setPrompts] = useState<Prompt[]>([]);
+  const [articleData, setArticleData] = useState<ArticleData | null>(null);
+  const [imageAssets, setImageAssets] = useState<Record<string, ImageIdeaSet>>({});
+  
+  // States for Steps
+  const [topic, setTopic] = useState("");
+  const [targetPage, setTargetPage] = useState("");
   const [pIds, setPIds] = useState({ gen: "", rev: "", idea: "", draw: "", meta: "" });
   const [pastedJson, setPastedJson] = useState("");
+  
+  // Correction States
   const [corrections, setCorrections] = useState<Record<string, string>>({});
   const [userWantsImage, setUserWantsImage] = useState<Record<string, boolean>>({});
   const [isWaitingForCorrection, setIsWaitingForCorrection] = useState(false);
   const [compiledCorrectionPrompt, setCompiledCorrectionPrompt] = useState("");
   const [correctionPastedJson, setCorrectionPastedJson] = useState("");
+
+  // Step 4 States
+  const [publishing, setPublishing] = useState(false);
+  const [published, setPublished] = useState<string | null>(null);
   const [ideaPromptText, setIdeaPromptText] = useState("");
   const [ideasJsonInput, setIdeasJsonInput] = useState("");
   const [seoPromptText, setSeoPromptText] = useState("");
   const [seoJsonInput, setSeoJsonInput] = useState("");
 
+  // --- Utilities ---
+  const cleanAndParseJson = (rawContent: string) => {
+    let clean = rawContent.trim();
+    if (clean.includes("```json")) clean = clean.split("```json")[1].split("```")[0].trim();
+    else if (clean.includes("```")) clean = clean.split("```")[1].split("```")[0].trim();
+    return JSON.parse(clean);
+  };
+
+  // --- Initial Load ---
   useEffect(() => {
     const fetchPrompts = async () => {
       setLoading(true);
@@ -41,33 +56,22 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
           const data = await response.json();
           setPrompts(data || []);
         }
-      } catch (error) {
-        console.error("خطا در دریافت پرامپت‌ها:", error);
-      } finally {
-        setLoading(false);
-      }
+      } catch (error) { console.error("خطا در دریافت پرامپت‌ها:", error); } 
+      finally { setLoading(false); }
     };
     if (projectId) fetchPrompts();
   }, [projectId]);
 
+  // --- Logic Handlers ---
   const handleParseInitialJson = () => {
     try {
-      const parsedData: ArticleData = JSON.parse(pastedJson);
+      const parsedData: ArticleData = cleanAndParseJson(pastedJson);
       setArticleData(parsedData);
-
-      const imageToggles: Record<string, boolean> = {
-        h1: false,
-        intro: false,
-        conclusion: false,
-      };
-      parsedData.sections?.forEach((sec) => {
-        imageToggles[sec.id] = sec.needs_image ?? false;
-      });
+      const imageToggles: Record<string, boolean> = { h1: false, intro: false, conclusion: false };
+      parsedData.sections?.forEach((sec) => imageToggles[sec.id] = sec.needs_image ?? false);
       setUserWantsImage(imageToggles);
       setStep(3);
-    } catch (error) {
-      alert("خطا: فرمت JSON نامعتبر است!");
-    }
+    } catch (error) { alert("خطا: فرمت JSON نامعتبر است!"); }
   };
 
   const handleGenerateCorrectionPrompt = () => {
@@ -75,128 +79,101 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
     const revPrompt = prompts.find((p: any) => String(p.id) === String(pIds.rev));
     const promptText = revPrompt?.text || "متن پرامپت بازبینی در دیتابیس موجود نیست.";
 
-    // ساخت گزارش اصلاحات با همان ساختار JSON مقاله
     const reviewReport = {
-      meta_title: corrections["meta_title"]?.trim() || "تایید شده (عینا تکرار شود)",
-      meta_description: corrections["meta_description"]?.trim() || "تایید شده (عینا تکرار شود)",
-      focus_keyword: corrections["focus_keyword"]?.trim() || "تایید شده (عینا تکرار شود)",
-      slug: corrections["slug"]?.trim() || "تایید شده (عینا تکرار شود)",
-      h1: corrections["h1"]?.trim() || "تایید شده (عینا تکرار شود)",
-      intro: corrections["intro"]?.trim() || "تایید شده (عینا تکرار شود)",
-      conclusion: corrections["conclusion"]?.trim() || "تایید شده (عینا تکرار شود)",
-      sections: articleData.sections?.map((sec) => ({
-        id: sec.id,
-        h2: sec.h2,
-        status: corrections[sec.id]?.trim() || "تایید شده (عینا تکرار شود)",
-      })),
+      meta_title: corrections["meta_title"]?.trim() || "تایید شده",
+      meta_description: corrections["meta_description"]?.trim() || "تایید شده",
+      sections: articleData.sections?.map((sec) => ({ id: sec.id, status: corrections[sec.id]?.trim() || "تایید شده" })),
     };
 
-    const finalCorrectionPrompt =
-`${promptText}
-
-دیتای فعلی مقاله (JSON کامل):
-${JSON.stringify(articleData, null, 2)}
-
-گزارش اصلاحات سردبیری:
-${JSON.stringify(reviewReport, null, 2)}`;
-
-    setCompiledCorrectionPrompt(finalCorrectionPrompt);
+    setCompiledCorrectionPrompt(`${promptText}\n\nDATA:\n${JSON.stringify(articleData, null, 2)}\n\nREPORT:\n${JSON.stringify(reviewReport, null, 2)}`);
     setIsWaitingForCorrection(true);
   };
 
   const handleApplyCorrectionJson = () => {
     try {
-      const parsedData: ArticleData = JSON.parse(correctionPastedJson);
+      const parsedData: ArticleData = cleanAndParseJson(correctionPastedJson);
       setArticleData(parsedData);
-
-      const imageToggles: Record<string, boolean> = {
-        h1: userWantsImage["h1"] ?? false,
-        intro: userWantsImage["intro"] ?? false,
-        conclusion: userWantsImage["conclusion"] ?? false,
-      };
-      parsedData.sections?.forEach((sec) => {
-        imageToggles[sec.id] = userWantsImage[sec.id] ?? sec.needs_image ?? false;
-      });
-      setUserWantsImage(imageToggles);
-
-      alert("اصلاحات اعمال شد! 🚀");
+      alert("اصلاحات اعمال شد!");
       setIsWaitingForCorrection(false);
       setCorrectionPastedJson("");
       setCorrections({});
-    } catch (error) {
-      alert("خطا: فرمت JSON اصلاحیه نامعتبر است!");
-    }
+    } catch (error) { alert("خطا: فرمت JSON اصلاحیه نامعتبر است!"); }
   };
 
   const setupImageWorkflow = () => {
+    const activeKeys = Object.keys(userWantsImage).filter(key => userWantsImage[key]);
+    if (activeKeys.length === 0) { alert("لطفاً حداقل یک بخش را برای تصویر انتخاب کنید."); return; }
+
+    const sectionsData = activeKeys.map(key => ({
+      section_id: key,
+      title: key === "h1" ? articleData?.h1 : key === "intro" ? "Intro" : articleData?.sections?.find(s => s.id === key)?.h2
+    }));
+
+    const ideaPromptBase = prompts.find((p: any) => String(p.id) === String(pIds.idea))?.text || "";
+    const seoPromptBase = prompts.find((p: any) => String(p.id) === String(pIds.meta))?.text || "";
+
+    setIdeaPromptText(`${ideaPromptBase}\n\nJSON:\n${JSON.stringify(sectionsData, null, 2)}`);
+    setSeoPromptText(`${seoPromptBase}\n\nJSON:\n${JSON.stringify(sectionsData, null, 2)}`);
     setStep(4);
+  };
+
+  const handleParseIdeasJson = () => {
+    try {
+      const parsed = cleanAndParseJson(ideasJsonInput);
+      const newAssets: Record<string, ImageIdeaSet> = {};
+      parsed.forEach((item: any) => {
+        const drawPromptBase = prompts.find((p: any) => String(p.id) === String(pIds.draw))?.text || "";
+        newAssets[item.section_id] = {
+          sectionId: item.section_id, heading: item.section_id, ideas: item.ideas || [],
+          selectedIdea: item.ideas?.[0] || "",
+          generatedPrompt: `${drawPromptBase}\n\nIdea: ${item.ideas?.[0]}`,
+          fileName: "", altText: ""
+        };
+      });
+      setImageAssets(newAssets);
+    } catch (e) { alert("خطای پارس ایده‌ها"); }
+  };
+
+  const handleParseSeoJson = () => {
+    try {
+      const parsed = cleanAndParseJson(seoJsonInput);
+      setImageAssets(prev => {
+        const next = { ...prev };
+        parsed.forEach((item: any) => {
+          if (next[item.section_id]) {
+            next[item.section_id].fileName = item.filename;
+            next[item.section_id].altText = item.alt;
+          }
+        });
+        return next;
+      });
+    } catch (e) { alert("خطای پارس سئو"); }
   };
 
   const getFinalGenerationPrompt = () => {
     const selectedGenPrompt = prompts.find((p: any) => String(p.id) === String(pIds.gen));
-    return `موضوع کلیدی: ${topic}\nلینک هدف: ${targetPage}\n\nدستورالعمل:\n${selectedGenPrompt?.text || ""}`;
+    return `Topic: ${topic}\nTarget: ${targetPage}\n\n${selectedGenPrompt?.text || ""}`;
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="relative w-full max-w-5xl bg-[#111111] border border-white/10 rounded-2xl p-6 shadow-2xl my-auto">
-
         <div className="flex justify-between items-center border-b border-white/10 pb-4 mb-6">
-          <h2 className="text-lg font-bold text-white">میز کار تولید محتوای هوشمند - مرحله {step}</h2>
-          <button onClick={onClose} className="text-white/50 hover:text-red-500 transition-colors text-sm font-medium">✕ بستن</button>
+          <h2 className="text-lg font-bold text-white">میز کار تولید محتوا - مرحله {step}</h2>
+          <button onClick={onClose} className="text-white/50 hover:text-red-500 transition-colors">✕</button>
         </div>
 
-        {step === 1 && (
-          <Step1
-            topic={topic} setTopic={setTopic}
-            targetPage={targetPage} setTargetPage={setTargetPage}
-            loading={loading}
-            prompts={prompts}
-            pIds={pIds} setPIds={setPIds}
-            onNext={() => setStep(2)}
-          />
-        )}
-
-        {step === 2 && (
-          <Step2
-            getFinalGenerationPrompt={getFinalGenerationPrompt}
-            pastedJson={pastedJson} setPastedJson={setPastedJson}
-            handleParseInitialJson={handleParseInitialJson}
-            setStep={setStep}
-          />
-        )}
-
+        {step === 1 && <Step1 topic={topic} setTopic={setTopic} targetPage={targetPage} setTargetPage={setTargetPage} loading={loading} prompts={prompts} pIds={pIds} setPIds={setPIds} onNext={() => setStep(2)} />}
+        
+        {step === 2 && <Step2 getFinalGenerationPrompt={getFinalGenerationPrompt} pastedJson={pastedJson} setPastedJson={setPastedJson} handleParseInitialJson={handleParseInitialJson} setStep={setStep} />}
+        
         {step === 3 && articleData && (
-          <Step3
-            articleData={articleData}
-            corrections={corrections} setCorrections={setCorrections}
-            userWantsImage={userWantsImage} setUserWantsImage={setUserWantsImage}
-            isWaitingForCorrection={isWaitingForCorrection}
-            setIsWaitingForCorrection={setIsWaitingForCorrection}
-            compiledCorrectionPrompt={compiledCorrectionPrompt}
-            correctionPastedJson={correctionPastedJson} setCorrectionPastedJson={setCorrectionPastedJson}
-            handleApplyCorrectionJson={handleApplyCorrectionJson}
-            handleGenerateCorrectionPrompt={handleGenerateCorrectionPrompt}
-            setupImageWorkflow={setupImageWorkflow}
-          />
+          <Step3 articleData={articleData} corrections={corrections} setCorrections={setCorrections} userWantsImage={userWantsImage} setUserWantsImage={setUserWantsImage} isWaitingForCorrection={isWaitingForCorrection} setIsWaitingForCorrection={setIsWaitingForCorrection} compiledCorrectionPrompt={compiledCorrectionPrompt} correctionPastedJson={correctionPastedJson} setCorrectionPastedJson={setCorrectionPastedJson} handleApplyCorrectionJson={handleApplyCorrectionJson} handleGenerateCorrectionPrompt={handleGenerateCorrectionPrompt} setupImageWorkflow={setupImageWorkflow} />
         )}
 
         {step === 4 && (
-          <Step4
-            imageAssets={imageAssets} setImageAssets={setImageAssets}
-            published={published} publishing={publishing}
-            ideaPromptText={ideaPromptText}
-            ideasJsonInput={ideasJsonInput} setIdeasJsonInput={setIdeasJsonInput}
-            handleParseIdeasJson={() => console.log("Parsing Ideas...")}
-            handleIdeaSelection={(k: string, v: string) => console.log(k, v)}
-            seoPromptText={seoPromptText}
-            seoJsonInput={seoJsonInput} setSeoJsonInput={setSeoJsonInput}
-            handleParseSeoJson={() => console.log("Parsing SEO...")}
-            handleFinalPublish={() => handleFinalPublish(articleData, imageAssets, setPublishing, (link) => setPublished(link))}
-            setStep={setStep}
-          />
+          <Step4 imageAssets={imageAssets} setImageAssets={setImageAssets} published={published} publishing={publishing} ideaPromptText={ideaPromptText} ideasJsonInput={ideasJsonInput} setIdeasJsonInput={setIdeasJsonInput} handleParseIdeasJson={handleParseIdeasJson} handleIdeaSelection={(k, v) => setImageAssets(p => ({ ...p, [k]: { ...p[k], selectedIdea: v } }))} seoPromptText={seoPromptText} seoJsonInput={seoJsonInput} setSeoJsonInput={setSeoJsonInput} handleParseSeoJson={handleParseSeoJson} handleFinalPublish={() => handleFinalPublish(articleData!, Object.values(imageAssets), setPublishing, (link) => setPublished(link))} setStep={setStep} />
         )}
-
       </div>
     </div>
   );
