@@ -14,28 +14,34 @@ export default function Step3({
   setupImageWorkflow,
 }: any) {
 
-  // اگر دیتا هنوز لود نشده
+  // ۱. حفاظت از برنامه (اگر دیتا نیست، صفحه را خالی نشان نده)
   if (!articleData) {
-    return <div className="p-8 text-center text-white/30">در حال بارگذاری داده‌های مقاله...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-center space-y-4">
+        <div className="w-12 h-12 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+        <p className="text-white/50 text-sm">در حال بارگذاری یا پردازش داده‌های مقاله...</p>
+        <p className="text-white/30 text-xs">اگر این پیام ماندگار شد، مرحله قبل را چک کن.</p>
+      </div>
+    );
   }
 
   return (
-    <div className="flex flex-col gap-6 w-full animate-in fade-in duration-500">
+    <div className="flex flex-col gap-6 w-full animate-in fade-in duration-300">
       <h3 className="text-xl font-bold text-white border-b border-white/10 pb-2">✍️ میز سردبیری و اصلاحات</h3>
 
-      {/* ۱. نمایش متاها */}
+      {/* ۱. نمایش اطلاعات مقاله */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="bg-[#1a1a1a] p-4 rounded-xl border border-white/5">
           <label className="text-[10px] text-white/40 uppercase font-bold tracking-wider">متا تایتل</label>
-          <p className="text-sm text-white mt-1">{articleData.seo_title || "بدون عنوان"}</p>
+          <p className="text-sm text-white mt-1 break-words">{articleData?.seo_title || "عنوان یافت نشد"}</p>
         </div>
         <div className="bg-[#1a1a1a] p-4 rounded-xl border border-white/5">
           <label className="text-[10px] text-white/40 uppercase font-bold tracking-wider">متا دیسکریپشن</label>
-          <p className="text-sm text-white mt-1">{articleData.meta_description || "بدون توضیحات"}</p>
+          <p className="text-sm text-white mt-1 break-words">{articleData?.meta_description || "توضیحات یافت نشد"}</p>
         </div>
       </div>
 
-      {/* ۲. باکس اصلاحیه */}
+      {/* ۲. بخش اصلاحیه */}
       <div className="bg-amber-900/10 border border-amber-900/30 p-5 rounded-xl">
         <h4 className="text-amber-500 font-bold mb-3 text-sm">🔄 بازنویسی و اصلاح متن</h4>
         {!isWaitingForCorrection ? (
