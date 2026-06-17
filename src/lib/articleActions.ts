@@ -12,10 +12,9 @@ export const handleFinalPublish = async (
   try {
     const mediaMap: Record<string, string> = {};
 
-    // ۱. آپلود فایل‌های فیزیکی
+    // ۱. آپلود فایل‌ها و دریافت URL
     for (const key of Object.keys(imageAssets)) {
       const asset = imageAssets[key];
-      // فقط در صورتی فایل را آپلود کن که واقعاً فایل وجود داشته باشد
       if (asset.file) {
         const formData = new FormData();
         formData.append("file", asset.file);
@@ -25,8 +24,7 @@ export const handleFinalPublish = async (
         const uploadRes = await fetch("/api/wordpress/media", { method: "POST", body: formData });
         const uploadData = await uploadRes.json();
         
-        // لاگ برای دیباگ: آیا URL درستی از سمت سرور برمی‌گردد؟
-        console.log(`Upload result for ${key}:`, uploadData);
+        console.log(`Debug Upload [${key}]:`, uploadData);
         
         if (uploadData.url) {
           mediaMap[key] = uploadData.url;
@@ -34,40 +32,39 @@ export const handleFinalPublish = async (
       }
     }
 
-    // تابع کمکی برای ساخت تگ تصویر استاندارد وردپرس
+    // ۲. تابع ساخت بلاک استاندارد گوتنبرگ (این بخش کلید حل مشکل است)
     const createImageBlock = (key: string) => {
       const url = mediaMap[key];
       const alt = imageAssets[key]?.altText || "تصویر مقاله";
       if (!url) return "";
       
-      // استفاده از کلاس wp-block-image برای شناسایی توسط گوتنبرگ
+      // ساختار کامنت گوتنبرگ (وردپرس این را به بلاک تصویر تبدیل می‌کند)
       return `
         <figure class="wp-block-image aligncenter size-large">
           <img src="${url}" alt="${alt}" />
         </figure>
-      `;
+        `;
     };
 
-    // ۲. ساخت بدنه HTML
+    // ۳. ساخت محتوای نهایی HTML
     let html = `<p><strong>کلمه کلیدی هدف:</strong> ${articleData.focus_keyword}</p>`;
     
-    // هدر
+    // درج هدر
     if (mediaMap["h1"]) html += createImageBlock("h1");
-    html += `<p>${articleData.intro}</p>`;
     
-    // اینترو
+    // درج اینترو
+    html += `<p>${articleData.intro}</p>`;
     if (mediaMap["intro"]) html += createImageBlock("intro");
 
-    // سکشن‌ها
+    // درج سکشن‌ها
     articleData.sections?.forEach((sec: any) => {
       html += `<h2>${sec.h2}</h2><p>${sec.content}</p>`;
-      // چک کردن اینکه آیا تصویری برای این سکشن خاص آپلود شده یا نه
       if (mediaMap[sec.id]) {
         html += createImageBlock(sec.id);
       }
     });
 
-    // سوالات متداول
+    // درج سوالات متداول
     if (articleData.faq?.length > 0) {
       html += `<h2>سوالات متداول</h2>`;
       articleData.faq.forEach((item: any) => {
@@ -75,11 +72,11 @@ export const handleFinalPublish = async (
       });
     }
 
-    // نتیجه‌گیری
+    // درج نتیجه‌گیری
     html += `<h2>جمع‌بندی</h2><p>${articleData.conclusion}</p>`;
     if (mediaMap["conclusion"]) html += createImageBlock("conclusion");
 
-    // فراخوان اقدام (CTA)
+    // درج CTA
     if (articleData.cta) {
       html += `
         <div style="padding:24px; background:#f4f4f4; border-radius:16px; border: 1px solid #ddd;">
@@ -88,15 +85,13 @@ export const handleFinalPublish = async (
         </div>`;
     }
 
-    // ۳. ارسال نهایی به وردپرس
-    console.log("Final HTML payload being sent to WP...");
-    
+    // ۴. ارسال نهایی به وردپرس
     const res = await fetch("/api/wordpress", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title: articleData.h1,
-        content: html,
+        content: html, // HTML شامل تگ‌های کامنت گوتنبرگ
         slug: articleData.slug,
         excerpt: articleData.meta_description
       }),
