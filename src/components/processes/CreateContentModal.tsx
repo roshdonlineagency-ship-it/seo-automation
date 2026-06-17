@@ -77,7 +77,7 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
   // لاجیک تولید پرامپت نهایی برای استپ ۲
   const getFinalGenerationPrompt = () => {
     const selectedGenPrompt = prompts.find((p: any) => String(p.id) === String(pIds.gen));
-    const promptText = selectedGenPrompt?.text || selectedGenPrompt?.content || "متن پرامپت در دیتابیس خالی است!";
+    const promptText = selectedGenPrompt?.text || "متن پرامپت در دیتابیس خالی است!";
     
     return `موضوع کلیدی: ${topic}
 لینک هدف (تارگت): ${targetPage}
