@@ -118,22 +118,24 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
     } catch (error) { alert("خطا: فرمت JSON اصلاحیه نامعتبر است!"); }
   };
 
-  const setupImageWorkflow = () => {
+ const setupImageWorkflow = () => {
     const activeKeys = Object.keys(userWantsImage).filter(key => userWantsImage[key]);
     if (activeKeys.length === 0) { alert("لطفاً حداقل یک بخش را برای تصویر انتخاب کنید."); return; }
 
     const sectionsData = activeKeys.map(key => ({
       section_id: key,
-      title: key === "h1" ? articleData?.h1 : key === "intro" ? "Intro" : articleData?.sections?.find(s => s.id === key)?.h2
+      title: key === "h1" ? articleData?.h1 : key === "intro" ? "Intro" : articleData?.sections?.find(s => s.id === key)?.h2,
+      // اضافه کردن پارامتر ایده (اگر در حافظه موجود است، در غیر این صورت یک متن پیش‌فرض یا خالی)
+      selected_idea: imageAssets[key]?.selectedIdea || "تصویر مرتبط با موضوع"
     }));
 
-    const ideaPromptBase = prompts.find((p: any) => String(p.id) === String(pIds.idea))?.text || "";
+    // ... ادامه کد (تولید پرامپت‌ها)
     const seoPromptBase = prompts.find((p: any) => String(p.id) === String(pIds.meta))?.text || "";
-
-    setIdeaPromptText(`${ideaPromptBase}\n\nJSON:\n${JSON.stringify(sectionsData, null, 2)}`);
+    
+    // ارسال دیتای جدید به هوش مصنوعی
     setSeoPromptText(`${seoPromptBase}\n\nJSON:\n${JSON.stringify(sectionsData, null, 2)}`);
     setStep(4);
-  };
+};
 
   const handleParseIdeasJson = () => {
     try {
