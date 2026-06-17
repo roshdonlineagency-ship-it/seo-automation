@@ -45,7 +45,6 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
     const fetchPrompts = async () => {
       setLoading(true);
       try {
-        // مسیر API دیتابیس خود را اینجا تنظیم کن
         const response = await fetch(`/api/prompts?projectId=${projectId}`); 
         
         if (response.ok) {
@@ -74,7 +73,18 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
   const handleParseIdeasJson = () => { /* لاجیک پارس ایده‌های تصویر */ };
   const handleParseSeoJson = () => { /* لاجیک پارس سئو تصاویر */ };
   const handleIdeaSelection = (key: string, value: string) => { /* لاجیک انتخاب ایده */ };
-  const getFinalGenerationPrompt = () => { return "/* پرامپت نهایی */"; };
+  
+  // لاجیک تولید پرامپت نهایی برای استپ ۲
+  const getFinalGenerationPrompt = () => {
+    const selectedGenPrompt = prompts.find((p: any) => String(p.id) === String(pIds.gen));
+    const promptText = selectedGenPrompt?.text || selectedGenPrompt?.content || "متن پرامپت در دیتابیس خالی است!";
+    
+    return `موضوع کلیدی: ${topic}
+لینک هدف (تارگت): ${targetPage}
+
+دستورالعمل تولید محتوا:
+${promptText}`;
+  };
 
   return (
     /* لایه بک‌دراپ تاریک و ثابت (Modal Wrapper) */
