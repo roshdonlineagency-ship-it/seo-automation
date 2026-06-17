@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { ArticleData, ImageIdeaSet, Prompt } from "@/lib/types";
 import { handleFinalPublish } from "@/lib/articleActions";
 
@@ -43,36 +43,76 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
     return JSON.parse(clean);
   };
 
-  // --- Live SEO Prompt Generator ---
-  // این useEffect پرامپت سئو را در لحظه با تغییر ایده‌ها آپدیت می‌کند
-  useEffect(() => {
-    if (step === 4 && Object.keys(imageAssets).length > 0) {
-      const activeKeys = Object.keys(userWantsImage).filter(key => userWantsImage[key]);
-      const seoPromptBase = prompts.find((p: any) => String(p.id) === String(pIds.meta))?.text || "";
-      
-      const sectionsData = activeKeys.map(key => ({
-        section_id: key,
-        title: key === "h1" ? articleData?.h1 : key === "intro" ? "Intro" : articleData?.sections?.find(s => s.id === key)?.h2,
-        selected_idea: imageAssets[key]?.selectedIdea || "در حال دریافت ایده..."
-      }));
-
-      setSeoPromptText(`${seoPromptBase}\n\nJSON ورودی:\n${JSON.stringify(sectionsData, null, 2)}`);
-    }
-  }, [imageAssets, step, userWantsImage, articleData, pIds.meta, prompts]);
-
-  // --- Core Handlers ---
-  const handleIdeaSelection = (key: string, newIdea: string) => {
-    const drawPromptBase = prompts.find((p: any) => String(p.id) === String(pIds.draw))?.text || "";
-    setImageAssets(prev => ({
-      ...prev,
-      [key]: {
-        ...prev[key],
-        selectedIdea: newIdea,
-        generatedPrompt: `${drawPromptBase}\n\nIdea: ${newIdea}`
-      }
+  // --- تابع مرکزی برای تولید لحظه‌ای پرامپت سئو ---
+  const refreshSeoPrompt = (assets: Record<string, ImageIdeaSet>) => {
+    const activeKeys = Object.keys(userWantsImage).filter(key => userWantsImage[key]);
+    const seoPromptBase = prompts.find((p: any) => String(p.id) === String(pIds.meta))?.text || "پرامپت سئو تعریف نشده";
+    
+    const sectionsData = activeKeys.map(key => ({
+      section_id: key,
+      title: key === "h1" ? articleData?.h1 : key === "intro" ? "Intro" : articleData?.sections?.find(s => s.id === key)?.h2,
+      selected_idea: assets[key]?.selectedIdea || "در حال دریافت ایده..."
     }));
+
+    setSeoPromptText(`${seoPromptBase}\n\nJSON ورودی:\n${JSON.stringify(sectionsData, null, 2)}`);
   };
 
+  // --- Handlers ---
+  const handleIdeaSelection = (key: string, newIdea: string) => {
+    const drawPromptBase = prompts.find((p: any) => String(p.id) === String(pIds.draw))?.text || "";
+    
+    setImageAssets(prev => {
+      const updatedAssets = {
+        ...prev,
+        [key]: {
+          ...prev[key],
+          selectedIdea: newIdea,
+          generatedPrompt: `${drawPromptBase}\n\nIdea: ${newIdea}`
+        }
+      };
+      // آپدیت همزمان پرامپت سئو
+      refreshSeoPrompt(updatedAssets);
+      return updatedAssets;
+    });
+  };
+
+  const handleParseIdeasJson = () => {
+    try {
+      const parsed = cleanAndParseJson(ideasJsonInput);
+      const newAssets: any = {};
+      parsed.forEach((item: any) => {
+        const drawPromptBase = prompts.find((p: any) => String(p.id) === String(pIds.draw))?.text || "";
+        newAssets[item.section_id] = { 
+            sectionId: item.section_id, 
+            heading: item.section_id, 
+            ideas: item.ideas || [], 
+            selectedIdea: item.ideas?.[0] || "", 
+            generatedPrompt: `${drawPromptBase}\n\nIdea: ${item.ideas?.[0]}` 
+        };
+      });
+      setImageAssets(newAssets);
+      refreshSeoPrompt(newAssets); // آپدیت پرامپت سئو
+    } catch (e) { alert("خطا در پارس ایده‌ها"); }
+  };
+
+  const handleParseSeoJson = () => {
+    try {
+      const parsed = cleanAndParseJson(seoJsonInput);
+      setImageAssets(prev => {
+        const next = { ...prev };
+        parsed.forEach((item: any) => {
+          if (next[item.section_id]) {
+            next[item.section_id].fileName = item.filename;
+            next[item.section_id].altText = item.alt;
+          }
+        });
+        refreshSeoPrompt(next); // آپدیت پرامپت سئو
+        return next;
+      });
+    } catch (e) { alert("خطا در پارس سئو"); }
+  };
+
+  // --- Initial Load ---
   useEffect(() => {
     const fetchPrompts = async () => {
       setLoading(true);
@@ -99,12 +139,10 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
     setStep(4);
   };
 
-  // ... (سایر توابع handleParseInitialJson, handleApplyCorrectionJson و غیره بدون تغییر باقی می‌مانند)
-  const handleParseInitialJson = () => { /* ... همان کد قبلی ... */ try { const parsedData = cleanAndParseJson(pastedJson); setArticleData(parsedData); const imageToggles: any = { h1: false, intro: false, conclusion: false }; parsedData.sections?.forEach((sec: any) => imageToggles[sec.id] = sec.needs_image ?? false); setUserWantsImage(imageToggles); setStep(3); } catch (e) { alert("JSON نامعتبر"); } };
-  const handleGenerateCorrectionPrompt = () => { /* ... همان کد قبلی ... */ if (!articleData) return; const revPrompt = prompts.find((p: any) => String(p.id) === String(pIds.rev)); setCompiledCorrectionPrompt(`${revPrompt?.text}\n\nDATA:\n${JSON.stringify(articleData, null, 2)}`); setIsWaitingForCorrection(true); };
+  // توابع کمکی دیگر
+  const handleParseInitialJson = () => { try { const parsedData = cleanAndParseJson(pastedJson); setArticleData(parsedData); const imageToggles: any = { h1: false, intro: false, conclusion: false }; parsedData.sections?.forEach((sec: any) => imageToggles[sec.id] = sec.needs_image ?? false); setUserWantsImage(imageToggles); setStep(3); } catch (e) { alert("JSON نامعتبر"); } };
+  const handleGenerateCorrectionPrompt = () => { if (!articleData) return; const revPrompt = prompts.find((p: any) => String(p.id) === String(pIds.rev)); setCompiledCorrectionPrompt(`${revPrompt?.text}\n\nDATA:\n${JSON.stringify(articleData, null, 2)}`); setIsWaitingForCorrection(true); };
   const handleApplyCorrectionJson = () => { try { const parsedData = cleanAndParseJson(correctionPastedJson); setArticleData(parsedData); alert("اصلاح شد!"); setIsWaitingForCorrection(false); } catch (e) { alert("خطا در پارس"); } };
-  const handleParseIdeasJson = () => { try { const parsed = cleanAndParseJson(ideasJsonInput); const newAssets: any = {}; parsed.forEach((item: any) => { const drawPromptBase = prompts.find((p: any) => String(p.id) === String(pIds.draw))?.text || ""; newAssets[item.section_id] = { sectionId: item.section_id, heading: item.section_id, ideas: item.ideas || [], selectedIdea: item.ideas?.[0] || "", generatedPrompt: `${drawPromptBase}\n\nIdea: ${item.ideas?.[0]}` }; }); setImageAssets(newAssets); } catch (e) { alert("خطا در پارس ایده‌ها"); } };
-  const handleParseSeoJson = () => { try { const parsed = cleanAndParseJson(seoJsonInput); setImageAssets(prev => { const next = { ...prev }; parsed.forEach((item: any) => { if (next[item.section_id]) { next[item.section_id].fileName = item.filename; next[item.section_id].altText = item.alt; } }); return next; }); } catch (e) { alert("خطا در پارس سئو"); } };
   const getFinalGenerationPrompt = () => { const selectedGenPrompt = prompts.find((p: any) => String(p.id) === String(pIds.gen)); return `Topic: ${topic}\nTarget: ${targetPage}\n\n${selectedGenPrompt?.text || ""}`; };
 
   return (
@@ -119,7 +157,23 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
         {step === 2 && <Step2 getFinalGenerationPrompt={getFinalGenerationPrompt} pastedJson={pastedJson} setPastedJson={setPastedJson} handleParseInitialJson={handleParseInitialJson} setStep={setStep} />}
         {step === 3 && articleData && <Step3 articleData={articleData} corrections={corrections} setCorrections={setCorrections} userWantsImage={userWantsImage} setUserWantsImage={setUserWantsImage} isWaitingForCorrection={isWaitingForCorrection} setIsWaitingForCorrection={setIsWaitingForCorrection} compiledCorrectionPrompt={compiledCorrectionPrompt} correctionPastedJson={correctionPastedJson} setCorrectionPastedJson={setCorrectionPastedJson} handleApplyCorrectionJson={handleApplyCorrectionJson} handleGenerateCorrectionPrompt={handleGenerateCorrectionPrompt} setupImageWorkflow={setupImageWorkflow} />}
         {step === 4 && (
-          <Step4 imageAssets={imageAssets} setImageAssets={setImageAssets} published={published} publishing={publishing} ideaPromptText={ideaPromptText} ideasJsonInput={ideasJsonInput} setIdeasJsonInput={setIdeasJsonInput} handleParseIdeasJson={handleParseIdeasJson} handleIdeaSelection={handleIdeaSelection} seoPromptText={seoPromptText} seoJsonInput={seoJsonInput} setSeoJsonInput={setSeoJsonInput} handleParseSeoJson={handleParseSeoJson} handleFinalPublish={() => handleFinalPublish(articleData!, Object.values(imageAssets), setPublishing, (link) => setPublished(link))} setStep={setStep} />
+          <Step4 
+            imageAssets={imageAssets} 
+            setImageAssets={setImageAssets} 
+            published={published} 
+            publishing={publishing} 
+            ideaPromptText={ideaPromptText} 
+            ideasJsonInput={ideasJsonInput} 
+            setIdeasJsonInput={setIdeasJsonInput} 
+            handleParseIdeasJson={handleParseIdeasJson} 
+            handleIdeaSelection={handleIdeaSelection} 
+            seoPromptText={seoPromptText} 
+            seoJsonInput={seoJsonInput} 
+            setSeoJsonInput={setSeoJsonInput} 
+            handleParseSeoJson={handleParseSeoJson} 
+            handleFinalPublish={() => handleFinalPublish(articleData!, Object.values(imageAssets), setPublishing, (link) => setPublished(link))} 
+            setStep={setStep} 
+          />
         )}
       </div>
     </div>
