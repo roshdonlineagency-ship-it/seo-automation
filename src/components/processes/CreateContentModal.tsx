@@ -65,14 +65,67 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
     }
   }, [projectId]);
 
-  // --- توابع منطقی (Handers) ---
-  const handleParseInitialJson = () => { /* لاجیک پارس JSON مرحله ۲ */ };
-  const handleApplyCorrectionJson = () => { /* لاجیک اعمال اصلاحیه مرحله ۳ */ };
-  const handleGenerateCorrectionPrompt = () => { /* لاجیک ساخت پرامپت اصلاحیه مرحله ۳ */ };
-  const setupImageWorkflow = () => { setStep(4); /* لاجیک آماده‌سازی تصاویر */ };
-  const handleParseIdeasJson = () => { /* لاجیک پارس ایده‌های تصویر */ };
-  const handleParseSeoJson = () => { /* لاجیک پارس سئو تصاویر */ };
-  const handleIdeaSelection = (key: string, value: string) => { /* لاجیک انتخاب ایده */ };
+  // --- توابع منطقی (Handlers) ---
+
+  // پردازش JSON مرحله ۲ و رفتن به مرحله ۳
+  const handleParseInitialJson = () => { 
+    if (!pastedJson) return;
+    try {
+      const parsedData = JSON.parse(pastedJson);
+      setArticleData(parsedData);
+      setStep(3); // رفتن به میز سردبیری (مرحله 3)
+    } catch (error) {
+      alert("خطا: فرمت JSON نامعتبر است! لطفاً ساختار { ... } را درست وارد کنید.");
+    }
+  };
+
+  // ساخت پرامپت اصلاحیه در مرحله ۳
+  const handleGenerateCorrectionPrompt = () => { 
+    const revPrompt = prompts.find((p: any) => String(p.id) === String(pIds.rev));
+    const promptText = revPrompt?.text || "متن پرامپت بازبینی در دیتابیس خالی است!";
+    
+    const finalCorrectionPrompt = `دستورالعمل بازبینی:
+${promptText}
+
+دیتای فعلی مقاله جهت بررسی و اصلاح:
+${JSON.stringify(articleData, null, 2)}`;
+
+    setCompiledCorrectionPrompt(finalCorrectionPrompt);
+    setIsWaitingForCorrection(true);
+  };
+
+  // اعمال JSON اصلاح شده در مرحله ۳
+  const handleApplyCorrectionJson = () => { 
+    if (!correctionPastedJson) {
+      alert("لطفاً خروجی JSON اصلاح‌شده را وارد کنید.");
+      return;
+    }
+    try {
+      const parsedData = JSON.parse(correctionPastedJson);
+      setArticleData(parsedData); // آپدیت دیتای مقاله با اصلاحات جدید
+      alert("اصلاحات با موفقیت روی دیتای مقاله اعمال شد! 🚀");
+      setIsWaitingForCorrection(false);
+      setCorrectionPastedJson("");
+    } catch (error) {
+      alert("خطا: فرمت JSON اصلاحیه نامعتبر است!");
+    }
+  };
+
+  // تایید نهایی سردبیر و رفتن به مرحله ۴ (یا انتشار در صورت عدم نیاز به تصویر)
+  const setupImageWorkflow = () => { 
+    if (!userWantsImage) {
+      // اگر عکس نخواست، مستقیم منتشر کن
+      handleFinalPublish(articleData, imageAssets, setPublishing, console.log);
+    } else {
+      // اگر عکس خواست، برو به مرحله 4
+      setStep(4); 
+    }
+  };
+
+  // لاجیک‌های مرحله ۴ (به صورت پایه تا زمانی که کد اصلی‌شان را بنویسی)
+  const handleParseIdeasJson = () => { console.log("Parsing Ideas JSON...", ideasJsonInput); };
+  const handleParseSeoJson = () => { console.log("Parsing SEO JSON...", seoJsonInput); };
+  const handleIdeaSelection = (key: string, value: string) => { console.log("Idea selected:", key, value); };
   
   // لاجیک تولید پرامپت نهایی برای استپ ۲
   const getFinalGenerationPrompt = () => {
