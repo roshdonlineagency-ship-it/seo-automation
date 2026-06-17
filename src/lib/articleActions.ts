@@ -16,7 +16,11 @@ export const handleFinalPublish = async (
       const asset = imageAssets[key];
       if (asset.file) {
         const formData = new FormData();
-        formData.append("file", asset.file);
+        // rename فایل به نام سئو شده قبل از آپلود
+        const renamedFile = new File([asset.file], asset.fileName || asset.file.name, {
+          type: asset.file.type
+        });
+        formData.append("file", renamedFile);
         formData.append("title", asset.altText || "تصویر مقاله");
         formData.append("alt_text", asset.altText || "تصویر مقاله");
 
