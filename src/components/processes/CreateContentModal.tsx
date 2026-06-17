@@ -118,24 +118,38 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
     } catch (error) { alert("خطا: فرمت JSON اصلاحیه نامعتبر است!"); }
   };
 
- const setupImageWorkflow = () => {
+const setupImageWorkflow = () => {
     const activeKeys = Object.keys(userWantsImage).filter(key => userWantsImage[key]);
-    if (activeKeys.length === 0) { alert("لطفاً حداقل یک بخش را برای تصویر انتخاب کنید."); return; }
+    
+    // ۱. بررسی انتخاب‌شدن بخش‌ها
+    if (activeKeys.length === 0) { 
+      alert("لطفاً حداقل یک بخش را برای تصویر انتخاب کنید."); 
+      return; 
+    }
 
+    // ۲. بررسی انتخاب پرامپت از مرحله ۱
+    const ideaPromptBase = prompts.find((p: any) => String(p.id) === String(pIds.idea))?.text;
+    const seoPromptBase = prompts.find((p: any) => String(p.id) === String(pIds.meta))?.text;
+
+    if (!ideaPromptBase) {
+      alert("هشدار: پرامپت ایده‌پردازی انتخاب نشده است! لطفاً در مرحله ۱ پرامپت مربوط به ایده را انتخاب کنید.");
+      console.log("Debug: pIds.idea =", pIds.idea, "Prompts list:", prompts);
+      return;
+    }
+
+    // ۳. آماده‌سازی داده‌ها (با توجه به اصلاحیه جدید برای ایده انتخاب شده)
     const sectionsData = activeKeys.map(key => ({
       section_id: key,
       title: key === "h1" ? articleData?.h1 : key === "intro" ? "Intro" : articleData?.sections?.find(s => s.id === key)?.h2,
-      // اضافه کردن پارامتر ایده (اگر در حافظه موجود است، در غیر این صورت یک متن پیش‌فرض یا خالی)
       selected_idea: imageAssets[key]?.selectedIdea || "تصویر مرتبط با موضوع"
     }));
 
-    // ... ادامه کد (تولید پرامپت‌ها)
-    const seoPromptBase = prompts.find((p: any) => String(p.id) === String(pIds.meta))?.text || "";
+    // ۴. ست کردن پرامپت‌ها
+    setIdeaPromptText(`${ideaPromptBase}\n\nJSON ورودی:\n${JSON.stringify(sectionsData, null, 2)}`);
+    setSeoPromptText(`${seoPromptBase || "متن پرامپت سئو یافت نشد"}\n\nJSON ورودی:\n${JSON.stringify(sectionsData, null, 2)}`);
     
-    // ارسال دیتای جدید به هوش مصنوعی
-    setSeoPromptText(`${seoPromptBase}\n\nJSON:\n${JSON.stringify(sectionsData, null, 2)}`);
     setStep(4);
-};
+  };
 
   const handleParseIdeasJson = () => {
     try {
