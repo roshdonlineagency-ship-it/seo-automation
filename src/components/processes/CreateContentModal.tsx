@@ -142,7 +142,7 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
             ideaPromptText={ideaPromptText}
             ideasJsonInput={ideasJsonInput} setIdeasJsonInput={setIdeasJsonInput}
             handleParseIdeasJson={() => console.log("Parsing Ideas...")}
-            handleIdeaSelection={(k, v) => console.log(k, v)}
+           handleIdeaSelection={(k: string, v: string) => console.log(k, v)}
             seoPromptText={seoPromptText}
             seoJsonInput={seoJsonInput} setSeoJsonInput={setSeoJsonInput}
             handleParseSeoJson={() => console.log("Parsing SEO...")}
