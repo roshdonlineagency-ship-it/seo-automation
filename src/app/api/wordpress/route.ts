@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@vercelpostgres';
+import { sql } from '@vercel/postgres';
 
 export async function POST(req: Request) {
   try {
