@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ArticleData, ImageIdeaSet, Prompt } from "@/lib/types";
-import { handleFinalPublish } from "@/lib/articleActions";
+import { handleFinalPublish, handleFinalHtmlPublish, uploadArticleImages } from "@/lib/articleActions";
 
 import Step1 from "@/components/processes/steps/Step1";
 import Step2 from "@/components/processes/steps/Step2";
@@ -19,7 +19,8 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
   
   const [topic, setTopic] = useState("");
   const [targetPage, setTargetPage] = useState("");
-  const [pIds, setPIds] = useState({ gen: "", rev: "", idea: "", draw: "", meta: "" });
+  // اضافه شدن کلید html برای مدیریت پرامپت ششم (CSS Guidelines)
+  const [pIds, setPIds] = useState({ gen: "", rev: "", idea: "", draw: "", meta: "", html: "" });
   const [pastedJson, setPastedJson] = useState("");
   
   const [corrections, setCorrections] = useState<Record<string, string>>({});
@@ -34,6 +35,11 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
   const [ideasJsonInput, setIdeasJsonInput] = useState("");
   const [seoPromptText, setSeoPromptText] = useState("");
   const [seoJsonInput, setSeoJsonInput] = useState("");
+
+  // استیت‌های جدید مدیریت فرآیند انتشار کد اختصاصی HTML
+  const [htmlPromptText, setHtmlPromptText] = useState("");
+  const [htmlCodeInput, setHtmlCodeInput] = useState("");
+  const [isPreparingHtml, setIsPreparingHtml] = useState(false);
 
   // --- Utilities ---
   const cleanAndParseJson = (rawContent: string) => {
@@ -111,6 +117,39 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
     } catch (e) { alert("خطا در پارس سئو"); }
   };
 
+  // هندلر جدید: آپلود مستقل تصاویر و آماده‌سازی پرامپت ترکیبی HTML (پرامپت ششم)
+  const handlePrepareHtmlPublish = async () => {
+    const assetValues = Object.values(imageAssets);
+    if (assetValues.length > 0 && assetValues.some(asset => !asset.file)) {
+      alert("⚠️ لطفاً ابتدا فایل فیزیکی تمامی تصاویر مشخص‌شده را در بخش‌های مربوطه پیوست کنید.");
+      return;
+    }
+
+    setIsPreparingHtml(true);
+    try {
+      // ۱. آپلود موازی تصاویر و ثبت لینک‌های مستقیم وردپرس
+      const uploadedMediaUrls = await uploadArticleImages(imageAssets);
+      
+      // ۲. دریافت ساختار پرامپت ششم (CSS / استایل‌های رفرنس)
+      const cssPromptBase = prompts.find((p: any) => String(p.id) === String(pIds.html))?.text || "پرامپت رفرنس HTML و استایل‌ها تعریف نشده است.";
+      
+      // ۳. تشکیل ساختار دیتای یکپارچه شامل محتوا و آدرس دقیق فایل‌ها برای هوش مصنوعی
+      const unifiedDataPayload = {
+        ...articleData,
+        uploaded_images: uploadedMediaUrls
+      };
+
+      // ۴. ترکیب نهایی پرامپت رفرنس و دیتای ساختاریافته
+      setHtmlPromptText(`${cssPromptBase}\n\n----------------------------\n[FINAL DATA JSON - USE IMAGE URLS IN PLACES]:\n${JSON.stringify(unifiedDataPayload, null, 2)}`);
+      alert("✅ تمام تصاویر با موفقیت در لایبرری وردپرس آپلود شدند! پرامپت ترکیبی HTML در پایین صفحه ظاهر شد.");
+    } catch (err) {
+      console.error(err);
+      alert("خطا در فرآیند آماده‌سازی و آپلود مستقل تصاویر پست");
+    } finally {
+      setIsPreparingHtml(false);
+    }
+  };
+
   // --- Initial Load ---
   useEffect(() => {
     const fetchPrompts = async () => {
@@ -171,6 +210,14 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
             handleParseSeoJson={handleParseSeoJson} 
             handleFinalPublish={() => handleFinalPublish(articleData!, imageAssets, setPublishing, (link) => setPublished(link))} 
             setStep={setStep} 
+
+            // تزریق پروپرتی‌ها و هندلرهای جریان HTML سفارشی به کامپوننت استپ ۴
+            isPreparingHtml={isPreparingHtml}
+            handlePrepareHtmlPublish={handlePrepareHtmlPublish}
+            htmlPromptText={htmlPromptText}
+            htmlCodeInput={htmlCodeInput}
+            setHtmlCodeInput={setHtmlCodeInput}
+            handleFinalHtmlPublish={() => handleFinalHtmlPublish(articleData!, htmlCodeInput, setPublishing, (link) => setPublished(link))}
           />
         )}
       </div>
