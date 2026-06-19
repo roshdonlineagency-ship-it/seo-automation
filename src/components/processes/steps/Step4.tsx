@@ -4,7 +4,6 @@ import React from "react";
 import { ImageIdeaSet } from "@/lib/types";
 
 interface Step4Props {
-  // از Record استفاده می‌کنیم چون دیتا به شکل کلید-مقدار (بر اساس آیدی سکشن) ذخیره میشه
   imageAssets: Record<string, ImageIdeaSet>;
   setImageAssets: React.Dispatch<React.SetStateAction<any>>;
   published: string | null;
@@ -20,6 +19,14 @@ interface Step4Props {
   handleParseSeoJson: () => void;
   handleFinalPublish: () => void;
   setStep: React.Dispatch<React.SetStateAction<number>>;
+
+  // فیلدهای اضافه شده در اینترفیس
+  isPreparingHtml: boolean;
+  handlePrepareHtmlPublish: () => void;
+  htmlPromptText: string;
+  htmlCodeInput: string;
+  setHtmlCodeInput: React.Dispatch<React.SetStateAction<string>>;
+  handleFinalHtmlPublish: () => void;
 }
 
 export default function Step4({
@@ -38,6 +45,14 @@ export default function Step4({
   handleParseSeoJson,
   handleFinalPublish,
   setStep,
+
+  // پارامترهای جدید پیاده‌سازی شده
+  isPreparingHtml,
+  handlePrepareHtmlPublish,
+  htmlPromptText,
+  htmlCodeInput,
+  setHtmlCodeInput,
+  handleFinalHtmlPublish,
 }: Step4Props) {
   return (
     <div className="space-y-6">
@@ -142,11 +157,42 @@ export default function Step4({
             </div>
           )}
 
-          <div className="border-t border-white/10 pt-6 flex gap-3">
-            <button onClick={() => setStep(3)} className="bg-white/5 border border-white/10 px-6 py-4 rounded-xl text-sm text-white font-medium hover:bg-white/10 transition-colors">برگشت به میز تحریریه</button>
-            <button onClick={handleFinalPublish} disabled={publishing || !Object.values(imageAssets)[0]?.fileName} className="flex-1 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 px-6 py-4 rounded-xl text-sm font-bold text-white shadow-xl shadow-violet-600/20 transition-all">
-              {publishing ? "در حال آپلود مدیا و تزریق ساختار بومی مقاله در وردپرس..." : "🚀 تایید نهایی و انتشار مستقیم در هسته وردپرس"}
-            </button>
+          {/* سکشن پایینی دکمه‌ها و مدیریت سابمیت نهایی */}
+          <div className="border-t border-white/10 pt-6 space-y-6">
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button onClick={() => setStep(3)} className="bg-white/5 border border-white/10 px-6 py-4 rounded-xl text-sm text-white font-medium hover:bg-white/10 transition-colors">برگشت به میز تحریریه</button>
+              
+              <button onClick={handleFinalPublish} disabled={publishing || isPreparingHtml || !Object.values(imageAssets)[0]?.fileName} className="flex-1 bg-violet-600 hover:bg-violet-500 disabled:opacity-40 px-6 py-4 rounded-xl text-sm font-bold text-white shadow-xl shadow-violet-600/20 transition-all">
+                {publishing ? "در حال آپلود مدیا و تزریق ساختار بومی مقاله در وردپرس..." : "🚀 تایید نهایی و انتشار مستقیم در هسته وردپرس"}
+              </button>
+
+              {/* دکمه درخواستی جدید کاربر */}
+              <button onClick={handlePrepareHtmlPublish} disabled={publishing || isPreparingHtml || !Object.values(imageAssets)[0]?.fileName} className="flex-1 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 px-6 py-4 rounded-xl text-sm font-bold text-white shadow-xl shadow-amber-600/20 transition-all">
+                {isPreparingHtml ? "در حال آپلود موازی تصاویر و ایجاد ساختار پرامپت..." : "⚡ انتشار کد html در وردپرس"}
+              </button>
+            </div>
+
+            {/* بخش رابط کاربری دریافت کد HTML نهایی از سیستم هوش مصنوعی */}
+            {htmlPromptText && (
+              <div className="bg-amber-500/5 border border-amber-500/20 p-6 rounded-2xl space-y-5 mt-4 animate-in fade-in duration-300">
+                <div>
+                  <div className="flex justify-between items-center mb-3">
+                    <p className="text-amber-400 text-xs font-bold uppercase tracking-wide">۵. پرامپت ترکیبی (رفرنس CSS + دیتای خام + لینک تصاویر فیزیکی):</p>
+                    <button onClick={() => { navigator.clipboard.writeText(htmlPromptText); alert("پرامپت توسعه‌یافته کپی شد!"); }} className="bg-amber-600/20 hover:bg-amber-600/40 text-amber-400 text-[11px] px-3 py-1.5 rounded-lg border border-amber-500/20 font-bold transition-all">📋 کپی پرامپت HTML</button>
+                  </div>
+                  <textarea readOnly value={htmlPromptText} className="w-full h-40 bg-black/40 border border-white/10 rounded-xl p-3 text-xs text-white/70 font-mono focus:outline-none resize-none custom-scrollbar" onClick={(e) => (e.target as HTMLTextAreaElement).select()} />
+                </div>
+                
+                <div className="pt-4 border-t border-amber-500/10">
+                  <p className="text-amber-400 text-xs font-bold mb-3 uppercase tracking-wide">۶. خروجی استایل‌دهی شده هوش مصنوعی (محتوای خالص HTML) را اینجا قرار دهید:</p>
+                  <textarea value={htmlCodeInput} onChange={(e) => setHtmlCodeInput(e.target.value)} placeholder="<div>\n  <h2 class='custom-heading'>...</h2>\n  <img src='...' />\n</div>" className="w-full h-48 bg-black/60 border border-white/10 rounded-xl p-3 text-xs text-white font-mono focus:outline-none custom-scrollbar" />
+                  
+                  <button onClick={handleFinalHtmlPublish} disabled={!htmlCodeInput || publishing} className="mt-4 w-full bg-amber-600 hover:bg-amber-500 text-white py-3.5 rounded-xl text-sm font-bold disabled:opacity-40 transition-colors shadow-lg shadow-amber-900/30">
+                     {publishing ? "در حال ارسال و تزریق مستقیم ساختار کد در هسته وردپرس..." : "🚀 تایید ساختار کد و انتشار مستقیم پست"}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
