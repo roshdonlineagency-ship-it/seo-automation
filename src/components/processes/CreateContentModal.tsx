@@ -135,8 +135,8 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
 
     setIsPreparingHtml(true);
     try {
-      // ۱. آپلود موازی تصاویر و ثبت لینک‌های مستقیم وردپرس
-      const uploadedMediaUrls = await uploadArticleImages(imageAssets);
+      // ۱. آپلود موازی تصاویر و ثبت لینک‌های مستقیم وردپرس (آیدی پروژه پاس داده شد)
+      const uploadedMediaUrls = await uploadArticleImages(projectId, imageAssets);
       
       // ۲. دریافت ساختار پرامپت ششم (CSS / استایل‌های رفرنس)
       const cssPromptBase = prompts.find((p: any) => String(p.id) === String(pIds.html))?.text || "پرامپت رفرنس HTML و استایل‌ها تعریف نشده است.";
@@ -163,7 +163,8 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
     const fetchPrompts = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/prompts?projectId=${projectId}`);
+        // جلوگیری از کش شدن پرامپت‌های پروژه قبلی با افزودن no-store
+        const response = await fetch(`/api/prompts?projectId=${projectId}`, { cache: "no-store" });
         if (response.ok) setPrompts(await response.json());
       } catch (error) { console.error(error); } 
       finally { setLoading(false); }
@@ -282,7 +283,9 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
             seoJsonInput={seoJsonInput} 
             setSeoJsonInput={setSeoJsonInput} 
             handleParseSeoJson={handleParseSeoJson} 
-            handleFinalPublish={() => handleFinalPublish(articleData!, imageAssets, setPublishing, (link) => setPublished(link))} 
+            
+            // در اینجا آیدی پروژه به توابع انتشار پاس داده شده است
+            handleFinalPublish={() => handleFinalPublish(projectId, articleData!, imageAssets, setPublishing, (link) => setPublished(link))} 
             setStep={setStep} 
 
             isPreparingHtml={isPreparingHtml}
@@ -290,7 +293,9 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
             htmlPromptText={htmlPromptText}
             htmlCodeInput={htmlCodeInput}
             setHtmlCodeInput={setHtmlCodeInput}
-            handleFinalHtmlPublish={() => handleFinalHtmlPublish(articleData!, htmlCodeInput, setPublishing, (link) => setPublished(link))}
+            
+            // در اینجا آیدی پروژه به تابع انتشار کدهای HTML پاس داده شده است
+            handleFinalHtmlPublish={() => handleFinalHtmlPublish(projectId, articleData!, htmlCodeInput, setPublishing, (link) => setPublished(link))}
           />
         )}
       </div>
