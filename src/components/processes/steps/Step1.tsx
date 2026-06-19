@@ -23,7 +23,14 @@ interface Step1Props {
     meta: string;
     html: string;
   };
-  setPIds: React.Dispatch<React.SetStateAction<any>>;
+  setPIds: React.Dispatch<React.SetStateAction<{
+    gen: string;
+    rev: string;
+    idea: string;
+    draw: string;
+    meta: string;
+    html: string;
+  }>>;
   onNext: () => void;
 }
 
@@ -39,15 +46,16 @@ export default function Step1({
   onNext,
 }: Step1Props) {
 
-  const updatePId = (key: string, value: string) => {
-    setPIds((prev: any) => ({ ...prev, [key]: value }));
+  const updatePId = (key: keyof typeof pIds, value: string) => {
+    setPIds((prev) => ({ ...prev, [key]: value }));
   };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 text-right" dir="rtl">
+      {/* بخش موضوع و لینک هدف */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <label className="text-xs text-white/40 font-medium">موضوع کلیدی محتوا:</label>
+          <label className="text-xs text-white/40 font-medium block">موضوع کلیدی محتوا:</label>
           <input
             type="text"
             value={topic}
@@ -57,13 +65,14 @@ export default function Step1({
           />
         </div>
         <div className="space-y-1.5">
-          <label className="text-xs text-white/40 font-medium">صفحه / لینک هدف تارگت:</label>
+          <label className="text-xs text-white/40 font-medium block">صفحه / لینک هدف تارگت:</label>
           <input
             type="text"
             value={targetPage}
             onChange={(e) => setTargetPage(e.target.value)}
             placeholder="لینک انکرتکست برای ارجاعات داخلی..."
-            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-violet-500 transition-colors"
+            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white/90 left-to-right focus:outline-none focus:border-violet-500 transition-colors text-left"
+            dir="ltr"
           />
         </div>
       </div>
