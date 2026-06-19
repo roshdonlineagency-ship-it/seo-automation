@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { sql } from '@vercel/postgres';
+import { sql } from '@vercelpostgres';
 
 export async function POST(req: Request) {
   try {
-    // اضافه کردن slug و excerpt که از فرانت‌اند ارسال می‌شوند
-    const { title, content, slug, excerpt } = await req.json();
+    // اضافه کردن meta به متغیرهای دریافتی از فرانت‌اند
+    const { title, content, slug, excerpt, meta } = await req.json();
 
     const { rows } = await sql`SELECT wordpress_url, wordpress_username, wordpress_app_password FROM brand_info LIMIT 1`;
     
@@ -30,6 +30,7 @@ export async function POST(req: Request) {
         slug, // اعمال نامک سئوشده
         excerpt, // اعمال متا دیسکریپشن در خلاصه وردپرس
         status: 'draft', // وضعیت پیش‌نویس جهت بررسی نهایی شما
+        meta: meta || {}, // تزریق آبجکت متادیتا برای RankMath و سئو
       }),
     });
 
