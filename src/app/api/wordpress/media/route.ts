@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     const { rows } = await sql`
       SELECT wordpress_url, wordpress_username, wordpress_app_password 
       FROM brand_info 
-      WHERE id = ${projectId} 
+      WHERE project_id = ${projectId} 
       LIMIT 1
     `;
     
