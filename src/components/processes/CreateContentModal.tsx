@@ -125,7 +125,7 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
     } catch (e) { alert("خطا در پارس سئو"); }
   };
 
-  // هندلر آپلود مستقل تصاویر و آماده‌سازی پرامپت ترکیبی HTML (پرامپت ششم)
+  // هندلر آپلود مستقل تصاویر و آماده‌سازی پرامپت ترکیبی HTML
   const handlePrepareHtmlPublish = async () => {
     const assetValues = Object.values(imageAssets);
     if (assetValues.length > 0 && assetValues.some(asset => !asset.file)) {
@@ -135,19 +135,16 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
 
     setIsPreparingHtml(true);
     try {
-      // ۱. آپلود موازی تصاویر و ثبت لینک‌های مستقیم وردپرس (آیدی پروژه پاس داده شد)
+      // استفاده از projectId برای آپلود تصاویر مرتبط با پروژه
       const uploadedMediaUrls = await uploadArticleImages(projectId, imageAssets);
       
-      // ۲. دریافت ساختار پرامپت ششم (CSS / استایل‌های رفرنس)
       const cssPromptBase = prompts.find((p: any) => String(p.id) === String(pIds.html))?.text || "پرامپت رفرنس HTML و استایل‌ها تعریف نشده است.";
       
-      // ۳. تشکیل ساختار دیتای یکپارچه شامل محتوا و آدرس دقیق فایل‌ها برای هوش مصنوعی
       const unifiedDataPayload = {
         ...articleData,
         uploaded_images: uploadedMediaUrls
       };
 
-      // ۴. ترکیب نهایی پرامپت رفرنس و دیتای ساختاریافته
       setHtmlPromptText(`${cssPromptBase}\n\n----------------------------\n[FINAL DATA JSON - USE IMAGE URLS IN PLACES]:\n${JSON.stringify(unifiedDataPayload, null, 2)}`);
       alert("✅ تمام تصاویر با موفقیت در لایبرری وردپرس آپلود شدند! پرامپت ترکیبی HTML در پایین صفحه ظاهر شد.");
     } catch (err) {
@@ -163,7 +160,7 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
     const fetchPrompts = async () => {
       setLoading(true);
       try {
-        // جلوگیری از کش شدن پرامپت‌های پروژه قبلی با افزودن no-store
+        // افزودن projectId به درخواست برای گرفتن پرامپت‌های همان پروژه
         const response = await fetch(`/api/prompts?projectId=${projectId}`, { cache: "no-store" });
         if (response.ok) setPrompts(await response.json());
       } catch (error) { console.error(error); } 
@@ -222,7 +219,7 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="relative w-full max-w-5xl bg-[#111111] border border-white/10 rounded-2xl p-6 shadow-2xl my-auto">
         <div className="flex justify-between items-center border-b border-white/10 pb-4 mb-6">
-          <h2 className="text-lg font-bold text-white">میز کار تولید محتوا - مرحله {step}</h2>
+          <h2 className="text-lg font-bold text-white">میز کار پروژه {projectId} - مرحله {step}</h2>
           <button onClick={onClose} className="text-white/50 hover:text-red-500 transition-colors">✕</button>
         </div>
 
@@ -284,7 +281,7 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
             setSeoJsonInput={setSeoJsonInput} 
             handleParseSeoJson={handleParseSeoJson} 
             
-            // در اینجا آیدی پروژه به توابع انتشار پاس داده شده است
+            // فراخوانی تابع انتشار با پاس دادن projectId
             handleFinalPublish={() => handleFinalPublish(projectId, articleData!, imageAssets, setPublishing, (link) => setPublished(link))} 
             setStep={setStep} 
 
@@ -294,7 +291,7 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
             htmlCodeInput={htmlCodeInput}
             setHtmlCodeInput={setHtmlCodeInput}
             
-            // در اینجا آیدی پروژه به تابع انتشار کدهای HTML پاس داده شده است
+            // فراخوانی تابع انتشار HTML با پاس دادن projectId
             handleFinalHtmlPublish={() => handleFinalHtmlPublish(projectId, articleData!, htmlCodeInput, setPublishing, (link) => setPublished(link))}
           />
         )}
