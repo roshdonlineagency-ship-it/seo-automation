@@ -3,13 +3,24 @@ import { sql } from '@vercel/postgres';
 
 export async function POST(req: Request) {
   try {
-    // اضافه کردن meta به متغیرهای دریافتی از فرانت‌اند
-    const { title, content, slug, excerpt, meta } = await req.json();
+    // ۱. دریافت projectId به همراه سایر مقادیر از فرانت‌اند
+    const { projectId, title, content, slug, excerpt, meta } = await req.json();
 
-    const { rows } = await sql`SELECT wordpress_url, wordpress_username, wordpress_app_password FROM brand_info LIMIT 1`;
+    if (!projectId) {
+       return NextResponse.json({ error: 'آیدی پروژه (projectId) به سرور ارسال نشده است' }, { status: 400 });
+    }
+
+    // ۲. فیلتر کردن کوئری دیتابیس دقیقاً بر اساس آیدی همان پروژه
+    // توجه: فرض بر این است که ستون کلید اصلی در جدول شما id نام دارد.
+    const { rows } = await sql`
+      SELECT wordpress_url, wordpress_username, wordpress_app_password 
+      FROM brand_info 
+      WHERE id = ${projectId}
+      LIMIT 1
+    `;
     
     if (!rows.length) {
-      return NextResponse.json({ error: 'اطلاعات وردپرس در دیتابیس یافت نشد' }, { status: 500 });
+      return NextResponse.json({ error: `اطلاعات وردپرس برای پروژه شماره ${projectId} در دیتابیس یافت نشد` }, { status: 404 });
     }
 
     const { wordpress_url, wordpress_username, wordpress_app_password } = rows[0];
