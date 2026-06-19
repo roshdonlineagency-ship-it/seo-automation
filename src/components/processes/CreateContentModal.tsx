@@ -19,8 +19,16 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
   
   const [topic, setTopic] = useState("");
   const [targetPage, setTargetPage] = useState("");
-  // اضافه شدن کلید html برای مدیریت پرامپت ششم (CSS Guidelines)
-  const [pIds, setPIds] = useState({ gen: "", rev: "", idea: "", draw: "", meta: "", html: "" });
+  
+  // مدیریت ۶ پرامپت ماتریس (شامل کلید html برای دستورالعمل‌های ساختار CSS/HTML)
+  const [pIds, setPIds] = useState({ 
+    gen: "", 
+    rev: "", 
+    idea: "", 
+    draw: "", 
+    meta: "", 
+    html: "" 
+  });
   const [pastedJson, setPastedJson] = useState("");
   
   const [corrections, setCorrections] = useState<Record<string, string>>({});
@@ -36,7 +44,7 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
   const [seoPromptText, setSeoPromptText] = useState("");
   const [seoJsonInput, setSeoJsonInput] = useState("");
 
-  // استیت‌های جدید مدیریت فرآیند انتشار کد اختصاصی HTML
+  // استیت‌های مدیریت فرآیند انتشار کد اختصاصی HTML
   const [htmlPromptText, setHtmlPromptText] = useState("");
   const [htmlCodeInput, setHtmlCodeInput] = useState("");
   const [isPreparingHtml, setIsPreparingHtml] = useState(false);
@@ -117,7 +125,7 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
     } catch (e) { alert("خطا در پارس سئو"); }
   };
 
-  // هندلر جدید: آپلود مستقل تصاویر و آماده‌سازی پرامپت ترکیبی HTML (پرامپت ششم)
+  // هندلر آپلود مستقل تصاویر و آماده‌سازی پرامپت ترکیبی HTML (پرامپت ششم)
   const handlePrepareHtmlPublish = async () => {
     const assetValues = Object.values(imageAssets);
     if (assetValues.length > 0 && assetValues.some(asset => !asset.file)) {
@@ -177,10 +185,37 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
     setStep(4);
   };
 
-  const handleParseInitialJson = () => { try { const parsedData = cleanAndParseJson(pastedJson); setArticleData(parsedData); const imageToggles: any = { h1: false, intro: false, conclusion: false }; parsedData.sections?.forEach((sec: any) => imageToggles[sec.id] = sec.needs_image ?? false); setUserWantsImage(imageToggles); setStep(3); } catch (e) { alert("JSON نامعتبر"); } };
-  const handleGenerateCorrectionPrompt = () => { if (!articleData) return; const revPrompt = prompts.find((p: any) => String(p.id) === String(pIds.rev)); setCompiledCorrectionPrompt(`${revPrompt?.text}\n\nDATA:\n${JSON.stringify(articleData, null, 2)}`); setIsWaitingForCorrection(true); };
-  const handleApplyCorrectionJson = () => { try { const parsedData = cleanAndParseJson(correctionPastedJson); setArticleData(parsedData); alert("اصلاح شد!"); setIsWaitingForCorrection(false); } catch (e) { alert("خطا در پارس"); } };
-  const getFinalGenerationPrompt = () => { const selectedGenPrompt = prompts.find((p: any) => String(p.id) === String(pIds.gen)); return `Topic: ${topic}\nTarget: ${targetPage}\n\n${selectedGenPrompt?.text || ""}`; };
+  const handleParseInitialJson = () => { 
+    try { 
+      const parsedData = cleanAndParseJson(pastedJson); 
+      setArticleData(parsedData); 
+      const imageToggles: any = { h1: false, intro: false, conclusion: false }; 
+      parsedData.sections?.forEach((sec: any) => imageToggles[sec.id] = sec.needs_image ?? false); 
+      setUserWantsImage(imageToggles); 
+      setStep(3); 
+    } catch (e) { alert("JSON نامعتبر"); } 
+  };
+  
+  const handleGenerateCorrectionPrompt = () => { 
+    if (!articleData) return; 
+    const revPrompt = prompts.find((p: any) => String(p.id) === String(pIds.rev)); 
+    setCompiledCorrectionPrompt(`${revPrompt?.text}\n\nDATA:\n${JSON.stringify(articleData, null, 2)}`); 
+    setIsWaitingForCorrection(true); 
+  };
+  
+  const handleApplyCorrectionJson = () => { 
+    try { 
+      const parsedData = cleanAndParseJson(correctionPastedJson); 
+      setArticleData(parsedData); 
+      alert("اصلاح شد!"); 
+      setIsWaitingForCorrection(false); 
+    } catch (e) { alert("خطا در پارس"); } 
+  };
+  
+  const getFinalGenerationPrompt = () => { 
+    const selectedGenPrompt = prompts.find((p: any) => String(p.id) === String(pIds.gen)); 
+    return `Topic: ${topic}\nTarget: ${targetPage}\n\n${selectedGenPrompt?.text || ""}`; 
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
@@ -190,9 +225,48 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
           <button onClick={onClose} className="text-white/50 hover:text-red-500 transition-colors">✕</button>
         </div>
 
-        {step === 1 && <Step1 topic={topic} setTopic={setTopic} targetPage={targetPage} setTargetPage={setTargetPage} loading={loading} prompts={prompts} pIds={pIds} setPIds={setPIds} onNext={() => setStep(2)} />}
-        {step === 2 && <Step2 getFinalGenerationPrompt={getFinalGenerationPrompt} pastedJson={pastedJson} setPastedJson={setPastedJson} handleParseInitialJson={handleParseInitialJson} setStep={setStep} />}
-        {step === 3 && articleData && <Step3 articleData={articleData} corrections={corrections} setCorrections={setCorrections} userWantsImage={userWantsImage} setUserWantsImage={setUserWantsImage} isWaitingForCorrection={isWaitingForCorrection} setIsWaitingForCorrection={setIsWaitingForCorrection} compiledCorrectionPrompt={compiledCorrectionPrompt} correctionPastedJson={correctionPastedJson} setCorrectionPastedJson={setCorrectionPastedJson} handleApplyCorrectionJson={handleApplyCorrectionJson} handleGenerateCorrectionPrompt={handleGenerateCorrectionPrompt} setupImageWorkflow={setupImageWorkflow} />}
+        {step === 1 && (
+          <Step1 
+            topic={topic} 
+            setTopic={setTopic} 
+            targetPage={targetPage} 
+            setTargetPage={setTargetPage} 
+            loading={loading} 
+            prompts={prompts} 
+            pIds={pIds} 
+            setPIds={setPIds} 
+            onNext={() => setStep(2)} 
+          />
+        )}
+        
+        {step === 2 && (
+          <Step2 
+            getFinalGenerationPrompt={getFinalGenerationPrompt} 
+            pastedJson={pastedJson} 
+            setPastedJson={setPastedJson} 
+            handleParseInitialJson={handleParseInitialJson} 
+            setStep={setStep} 
+          />
+        )}
+        
+        {step === 3 && articleData && (
+          <Step3 
+            articleData={articleData} 
+            corrections={corrections} 
+            setCorrections={setCorrections} 
+            userWantsImage={userWantsImage} 
+            setUserWantsImage={setUserWantsImage} 
+            isWaitingForCorrection={isWaitingForCorrection} 
+            setIsWaitingForCorrection={setIsWaitingForCorrection} 
+            compiledCorrectionPrompt={compiledCorrectionPrompt} 
+            correctionPastedJson={correctionPastedJson} 
+            setCorrectionPastedJson={setCorrectionPastedJson} 
+            handleApplyCorrectionJson={handleApplyCorrectionJson} 
+            handleGenerateCorrectionPrompt={handleGenerateCorrectionPrompt} 
+            setupImageWorkflow={setupImageWorkflow} 
+          />
+        )}
+        
         {step === 4 && (
           <Step4 
             imageAssets={imageAssets} 
@@ -211,7 +285,6 @@ export default function CreateContentModal({ projectId, onClose }: { projectId: 
             handleFinalPublish={() => handleFinalPublish(articleData!, imageAssets, setPublishing, (link) => setPublished(link))} 
             setStep={setStep} 
 
-            // تزریق پروپرتی‌ها و هندلرهای جریان HTML سفارشی به کامپوننت استپ ۴
             isPreparingHtml={isPreparingHtml}
             handlePrepareHtmlPublish={handlePrepareHtmlPublish}
             htmlPromptText={htmlPromptText}
