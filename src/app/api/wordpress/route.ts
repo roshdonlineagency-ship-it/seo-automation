@@ -11,11 +11,11 @@ export async function POST(req: Request) {
     }
 
     // ۲. فیلتر کردن کوئری دیتابیس دقیقاً بر اساس آیدی همان پروژه
-    // توجه: فرض بر این است که ستون کلید اصلی در جدول شما id نام دارد.
+    // اصلاح شد: از project_id به جای id استفاده کردیم
     const { rows } = await sql`
       SELECT wordpress_url, wordpress_username, wordpress_app_password 
       FROM brand_info 
-      WHERE id = ${projectId}
+      WHERE project_id = ${Number(projectId)}
       LIMIT 1
     `;
     
@@ -38,17 +38,17 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         title,
         content,
-        slug, // اعمال نامک سئوشده
-        excerpt, // اعمال متا دیسکریپشن در خلاصه وردپرس
-        status: 'draft', // وضعیت پیش‌نویس جهت بررسی نهایی شما
-        meta: meta || {}, // تزریق آبجکت متادیتا برای RankMath و سئو
+        slug, 
+        excerpt,
+        status: 'draft', 
+        meta: meta || {}, 
       }),
     });
 
     const data = await response.json();
 
     if (!response.ok) {
-      return NextResponse.json({ error: data.message }, { status: response.status });
+      return NextResponse.json({ error: data.message || "خطا در وردپرس" }, { status: response.status });
     }
 
     return NextResponse.json({ 
@@ -58,6 +58,7 @@ export async function POST(req: Request) {
     });
 
   } catch (error: any) {
+    console.error("API Error:", error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
