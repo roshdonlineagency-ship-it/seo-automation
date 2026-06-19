@@ -2,6 +2,7 @@ import { ImageIdeaSet } from "@/lib/types";
 
 // تابع جدید: فقط تصاویر را آپلود می‌کند و یک مپ از کلید -> آدرس URL تحویل می‌دهد
 export const uploadArticleImages = async (
+  projectId: number,
   imageAssets: Record<string, ImageIdeaSet>
 ): Promise<Record<string, string>> => {
   const mediaMap: Record<string, string> = {};
@@ -16,8 +17,15 @@ export const uploadArticleImages = async (
       formData.append("file", renamedFile);
       formData.append("title", asset.altText || "تصویر مقاله");
       formData.append("alt_text", asset.altText || "تصویر مقاله");
+      
+      // اضافه کردن آیدی پروژه به فرم‌دیتا
+      formData.append("projectId", String(projectId));
 
-      const uploadRes = await fetch("/api/wordpress/media", { method: "POST", body: formData });
+      // آیدی پروژه در URL هم پاس داده می‌شود تا بک‌اند به راحتی بتواند سایت هدف را پیدا کند
+      const uploadRes = await fetch(`/api/wordpress/media?projectId=${projectId}`, { 
+        method: "POST", 
+        body: formData 
+      });
       const uploadData = await uploadRes.json();
 
       console.log(`Debug HTML Upload [${key}]:`, uploadData);
@@ -32,6 +40,7 @@ export const uploadArticleImages = async (
 
 // تابع جدید: انتشار ساختار نهایی تولید شده توسط هوش مصنوعی بر پایه HTML سفارشی
 export const handleFinalHtmlPublish = async (
+  projectId: number,
   articleData: any,
   htmlContent: string,
   setPublishing: (val: boolean) => void,
@@ -40,10 +49,11 @@ export const handleFinalHtmlPublish = async (
   if (!articleData || !htmlContent) return;
   setPublishing(true);
   try {
-    const res = await fetch("/api/wordpress", {
+    const res = await fetch(`/api/wordpress?projectId=${projectId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        projectId: projectId, // ارسال آیدی پروژه برای بک‌اند
         title: articleData.h1,
         content: htmlContent, // کد نهایی HTML دریافت شده از AI
         slug: articleData.slug,
@@ -69,8 +79,9 @@ export const handleFinalHtmlPublish = async (
   }
 };
 
-// تابع قبلی شما برای انتشار گوتنبرگ (دست‌نخورده باقی می‌ماند)
+// تابع قبلی شما برای انتشار گوتنبرگ
 export const handleFinalPublish = async (
+  projectId: number,
   articleData: any,
   imageAssets: Record<string, ImageIdeaSet>,
   setPublishing: (val: boolean) => void,
@@ -79,7 +90,8 @@ export const handleFinalPublish = async (
   if (!articleData) return;
   setPublishing(true);
   try {
-    const mediaMap = await uploadArticleImages(imageAssets);
+    // پاس دادن آیدی پروژه به تابع آپلود تصویر
+    const mediaMap = await uploadArticleImages(projectId, imageAssets);
 
     const createImageBlock = (key: string) => {
       const url = mediaMap[key];
@@ -112,10 +124,11 @@ export const handleFinalPublish = async (
       html += `\n<div style="padding:24px; background:#f4f4f4; border-radius:16px; border: 1px solid #ddd;">\n<h4>${articleData.cta.text}</h4>\n<a href="${articleData.cta.target_url}" style="font-weight:bold; color:#0073aa;">${articleData.cta.anchor_text}</a>\n</div>`;
     }
 
-    const res = await fetch("/api/wordpress", {
+    const res = await fetch(`/api/wordpress?projectId=${projectId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        projectId: projectId, // ارسال آیدی پروژه
         title: articleData.h1,
         content: html,
         slug: articleData.slug,
