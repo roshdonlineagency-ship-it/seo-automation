@@ -37,7 +37,7 @@ export default function Step1(props: any) {
       ) : (
         <div className="space-y-4">
           <p className="text-xs text-violet-400 font-semibold border-r-2 border-violet-500 pr-2 my-2">
-            تخصیص ماتریس پرامپت‌های ۵گانه
+            تخصیص ماتریس پرامپت‌های ۶گانه
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -81,13 +81,21 @@ export default function Step1(props: any) {
                 {prompts?.map((p: any) => <option key={p.id} value={p.id} className="bg-[#111]">{p.name}</option>)}
               </select>
             </div>
+            {/* ۶. رفرنس و استایل HTML (پرامپت جدید اضافه شده) */}
+            <div>
+              <label className="block text-white/40 text-[11px] mb-1.5">۶. رفرنس و قالب HTML (CSS):</label>
+              <select value={pIds.html} onChange={(e) => updatePId("html", e.target.value)} className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-violet-500">
+                <option value="" className="bg-[#111]">انتخاب کنید</option>
+                {prompts?.map((p: any) => <option key={p.id} value={p.id} className="bg-[#111]">{p.name}</option>)}
+              </select>
+            </div>
           </div>
         </div>
       )}
 
       <button
         onClick={onNext}
-        disabled={!topic || !targetPage || !pIds.gen || !pIds.rev || !pIds.idea || !pIds.draw || !pIds.meta}
+        disabled={!topic || !targetPage || !pIds.gen || !pIds.rev || !pIds.idea || !pIds.draw || !pIds.meta || !pIds.html}
         className="w-full bg-violet-600 hover:bg-violet-500 disabled:opacity-40 py-3.5 rounded-xl text-sm font-bold transition-all text-white mt-4 shadow-lg shadow-violet-600/20"
       >
         تولید ماتریس و گام بعدی پرامپت کلاود ←
